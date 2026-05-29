@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+.next/
+out/
+public/storage
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Storage
+backend/storage/app/*
+!backend/storage/app/.gitignore
+!backend/storage/app/public
+backend/storage/app/public/*
+!backend/storage/app/public/.gitkeep
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitkeep

@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 234 17% 12%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-escom-neutral-900 font-sans antialiased;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-escom-neutral-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-escom-neutral-300 rounded-full hover:bg-escom-neutral-400 transition;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .container-escom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+           bg-escom-blue-600 text-white font-semibold
+           hover:bg-escom-blue-700 active:bg-escom-blue-800
+           transition-all shadow-md hover:shadow-lg
+           focus:outline-none focus:ring-2 focus:ring-escom-blue-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+           bg-escom-gold-500 text-escom-neutral-900 font-semibold
+           hover:bg-escom-gold-600 hover:text-white
+           transition-all shadow-md hover:shadow-lg
+           focus:outline-none focus:ring-2 focus:ring-escom-gold-400 focus:ring-offset-2;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+           border-2 border-escom-blue-600 text-escom-blue-600 font-semibold
+           hover:bg-escom-blue-600 hover:text-white
+           transition-all
+           focus:outline-none focus:ring-2 focus:ring-escom-blue-500 focus:ring-offset-2;
+  }
+
+  .input-escom {
+    @apply w-full px-4 py-2.5 rounded-lg border border-escom-neutral-200
+           bg-white text-escom-neutral-900
+           focus:outline-none focus:ring-2 focus:ring-escom-blue-500 focus:border-transparent
+           transition placeholder:text-escom-neutral-400;
+  }
+
+  .card-escom {
+    @apply bg-white rounded-xl shadow-sm border border-escom-neutral-100
+           hover:shadow-lg transition-all duration-300;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-escom-blue-600 to-escom-gold-500 bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
