@@ -10,8 +10,8 @@ import { toast } from 'sonner'
 
 const TYPES_SERVICES = [
   { id: 'CONCEPTION', label: 'Conception', endpoint: '/public/services/conception', idKey: 'id_service_conception', priceKey: 'prix_unitaire_ht' },
-  { id: 'IMPRESSION', label: 'Impression', endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_base_ht' },
-  { id: 'SOCIAL', label: 'Social Media', endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_pack_mensuel_ht' },
+  { id: 'IMPRESSION', label: 'Impression', endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_ht' },
+  { id: 'SOCIAL', label: 'Social Media', endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_ht' },
 ]
 
 const STATUTS = [

@@ -22,9 +22,10 @@ export default function EmployeDemandes() {
 
   const submitResponse = async () => {
     try {
-      await api.post(`/demandes-campagne/${respondTo.id_demande}/respond`, {
-        reponse_escom: response.reponse_escom,
+      await api.post(`/demandes-campagne/${respondTo.id_demande}/repondre`, {
+        contenu: response.reponse_escom,
         prix_propose: Number(response.prix_propose),
+        est_devis_final: true,
       })
       toast.success('Réponse envoyée')
       setRespondTo(null); setResponse({ reponse_escom: '', prix_propose: '' })

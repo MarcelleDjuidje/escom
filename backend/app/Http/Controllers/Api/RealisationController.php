@@ -68,6 +68,13 @@ class RealisationController extends Controller
         $validated['image_principale'] = null;
     }
 
+    // Mapper est_publique → statut_publication
+    $estPublique = filter_var($validated['est_publique'] ?? true, FILTER_VALIDATE_BOOLEAN);
+    $validated['statut_publication'] = $estPublique ? 'publie' : 'brouillon';
+    $validated['publie_le'] = $estPublique ? now() : null;
+    $validated['visible_visiteurs'] = 1;
+    unset($validated['est_publique']);
+
     // Champs auto-remplis
     $validated['ordre_affichage'] = \App\Models\Realisation::max('ordre_affichage') + 1;
     $validated['date_realisation'] = now()->toDateString();
@@ -91,10 +98,10 @@ class RealisationController extends Controller
     ]);
 
     if ($request->has('est_publique')) {
-        $validated['est_publique'] = filter_var(
-            $request->input('est_publique'),
-            FILTER_VALIDATE_BOOLEAN
-        );
+        $estPublique = filter_var($request->input('est_publique'), FILTER_VALIDATE_BOOLEAN);
+        $validated['statut_publication'] = $estPublique ? 'publie' : 'brouillon';
+        $validated['publie_le'] = $estPublique ? now() : null;
+        unset($validated['est_publique']);
     }
 
     if ($request->hasFile('image_principale')) {

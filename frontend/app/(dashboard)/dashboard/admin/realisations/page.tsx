@@ -74,13 +74,13 @@ export default function AdminRealisations() {
               <div className="aspect-square bg-escom-neutral-100 relative">
                 <img src={fileUrl(r.image_principale)} alt={r.titre} className="w-full h-full object-cover"
                   onError={e => { (e.target as HTMLImageElement).src = '/assets/images/placeholder.svg' }} />
-                {!r.est_publique && <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded">Privé</span>}
+                {r.statut_publication !== 'publie' && <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded">Brouillon</span>}
               </div>
               <div className="p-3">
                 <p className="font-semibold text-sm truncate">{r.titre}</p>
                 <p className="text-xs text-escom-neutral-500 capitalize">{r.categorie}</p>
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => { setEditing(r); setForm({ titre: r.titre, description: r.description || '', categorie: r.categorie, secteur_activite: r.secteur_activite || '', est_publique: r.est_publique }); setShowForm(true) }} className="text-escom-blue-600 text-xs"><Pencil size={12} /> Éditer</button>
+                  <button onClick={() => { setEditing(r); setForm({ titre: r.titre, description: r.description || '', categorie: r.categorie, secteur_activite: r.secteur_activite || '', est_publique: r.statut_publication === 'publie' }); setShowForm(true) }} className="text-escom-blue-600 text-xs"><Pencil size={12} /> Éditer</button>
                   <button onClick={() => remove(r.id_realisation)} className="text-red-600 text-xs"><Trash size={12} /> Suppr.</button>
                 </div>
               </div>

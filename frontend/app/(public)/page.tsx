@@ -1,10 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Palette, Printer, Megaphone, Target, Sparkles, Users, Award, Clock, Star } from 'lucide-react'
+import { api } from '@/lib/api'
 
 export default function HomePage() {
+  const [avis, setAvis] = useState<any[]>([])
+
+  useEffect(() => {
+    api.get('/public/avis').then((r: any) => setAvis(r.data || [])).catch(() => {})
+  }, [])
   return (
     <>
       {/* HERO */}
@@ -125,6 +132,44 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* AVIS CLIENTS */}
+      {avis.length > 0 && (
+        <section className="py-20 bg-white">
+          <div className="container-escom">
+            <div className="text-center mb-12">
+              <span className="text-escom-gold-600 font-semibold uppercase tracking-wider text-sm">Témoignages</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2">Ce que disent <span className="gradient-text">nos clients</span></h2>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {avis.slice(0, 6).map((a: any, i: number) => (
+                <motion.div key={a.id_avis}
+                  initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="card-escom p-5">
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1,2,3,4,5].map(n => (
+                      <Star key={n} size={14} className={n <= Number(a.note) ? 'fill-escom-gold-500 text-escom-gold-500' : 'text-escom-neutral-300'} />
+                    ))}
+                  </div>
+                  {a.commentaire && (
+                    <p className="text-sm text-escom-neutral-700 italic mb-3">"{a.commentaire}"</p>
+                  )}
+                  <p className="text-xs font-semibold text-escom-blue-700">
+                    — {a.client?.raison_sociale || a.client?.nom_complet || 'Client ESCOM'}
+                  </p>
+                  {a.reponse_admin && (
+                    <div className="mt-3 pt-3 border-t border-escom-neutral-100">
+                      <p className="text-[11px] font-semibold text-escom-blue-600 mb-1">Réponse ESCOM</p>
+                      <p className="text-xs text-escom-neutral-600">{a.reponse_admin}</p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="py-20 relative overflow-hidden">

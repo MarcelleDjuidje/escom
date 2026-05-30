@@ -22,27 +22,27 @@ const TABS = [
     endpoint: '/public/services/impression',
     adminEndpoint: '/admin/services/impression',
     idKey: 'id_service_impression',
-    priceKey: 'prix_unitaire_base_ht',
-    typeField: 'type_impression',
-    typeOptions: ['flyer','banderole','carte_visite','brochure','t_shirt','sticker','autocollant','affiche','panneau','autre'],
+    priceKey: 'prix_unitaire_ht',
+    typeField: 'type_support',
+    typeOptions: ['flyer','affiche','banderole','macaron','roll_up','kakemono','carte_visite','bache','enveloppe','tshirt','autre'],
   },
   {
     id: 'social', label: 'Social Media', icon: Megaphone,
     endpoint: '/public/services/social',
     adminEndpoint: '/admin/services/social',
     idKey: 'id_service_social',
-    priceKey: 'prix_pack_mensuel_ht',
-    typeField: 'type_pack',
-    typeOptions: ['starter','premium','custom'],
+    priceKey: 'prix_ht',
+    typeField: 'type_prestation',
+    typeOptions: ['post_simple','story','reel','gestion_compte','publicite_sponsorisee','audit','strategie_editoriale'],
   },
   {
     id: 'campagne', label: 'Campagnes', icon: Target,
     endpoint: '/public/services/campagnes',
     adminEndpoint: '/admin/services/campagnes',
     idKey: 'id_campagne',
-    priceKey: 'prix_unitaire_base_ht',
+    priceKey: 'prix_indicatif_min',
     typeField: 'type_campagne',
-    typeOptions: ['lancement','notoriete','vente','recrutement','evenementielle','autre'],
+    typeOptions: ['social_ads','affichage','radio_tv','evenementiel','influence','email_marketing','seo_sea','autre'],
   },
 ]
 
@@ -201,7 +201,7 @@ export default function AdminServices() {
             </select>
           </div>
 
-          <input placeholder="Libellé *" value={form.libelle || form.titre || ''}
+          <input placeholder="Libellé / Titre *" value={form.libelle || form.titre || ''}
             onChange={e => setForm({...form, libelle: e.target.value, titre: e.target.value})}
             className="input-escom md:col-span-2" />
 

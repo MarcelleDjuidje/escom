@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { StatusBadge } from '@/components/dashboard/status-badge'
 import { api } from '@/lib/api'
 import { formatDate, formatXAF } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 export default function ClientDemandes() {
+  const router = useRouter()
   const [demandes, setDemandes] = useState<any[]>([])
   const [campagnes, setCampagnes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,6 +31,16 @@ export default function ClientDemandes() {
       setCampagnes(c.data || [])
     }).finally(() => setLoading(false))
   }, [])
+
+  const changerStatut = async (id: number, statut: string) => {
+    try {
+      await api.patch(`/demandes-campagne/${id}/statut`, { statut })
+      setDemandes(prev => prev.map(d => d.id_demande === id ? { ...d, statut } : d))
+      toast.success(statut === 'acceptee' ? 'Devis accepté !' : 'Demande refusée')
+    } catch {
+      toast.error('Erreur lors de la mise à jour')
+    }
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,9 +131,30 @@ export default function ClientDemandes() {
               </div>
               {d.prix_propose && (
                 <div className="mt-3 p-3 bg-escom-gold-50 rounded border border-escom-gold-200">
-                  <p className="text-xs text-escom-gold-800 font-semibold uppercase">Réponse ESCOM</p>
+                  <p className="text-xs text-escom-gold-800 font-semibold uppercase">Proposition commerciale ESCOM</p>
                   <p className="text-sm mt-1">{d.reponse_escom}</p>
                   <p className="text-lg font-bold text-escom-gold-700 mt-2">{formatXAF(d.prix_propose)}</p>
+                  {d.statut === 'devis_envoye' && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => changerStatut(d.id_demande, 'acceptee')}
+                        className="btn-primary text-sm flex-1 flex items-center justify-center gap-1">
+                        <CheckCircle2 size={14} /> Accepter le devis
+                      </button>
+                      <button
+                        onClick={() => changerStatut(d.id_demande, 'refusee')}
+                        className="btn-outline text-sm flex-1 flex items-center justify-center gap-1 !text-red-600 !border-red-200">
+                        <XCircle size={14} /> Refuser
+                      </button>
+                    </div>
+                  )}
+                  {d.statut === 'acceptee' && (
+                    <button
+                      onClick={() => router.push(`/dashboard/client/commandes/nouveau?type=campagnes&service=${d.id_campagne}`)}
+                      className="btn-primary text-sm w-full mt-3">
+                      Commander maintenant
+                    </button>
+                  )}
                 </div>
               )}
             </div>

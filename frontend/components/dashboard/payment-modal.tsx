@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Loader2, CheckCircle2, AlertCircle, Phone, ChevronLeft } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -65,10 +65,12 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
   const [countdown, setCountdown] = useState(180)
   const [errorMsg, setErrorMsg] = useState('')
   const [reference, setReference] = useState('')
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Reset à la fermeture
   useEffect(() => {
     if (!isOpen) {
+      if (pollingRef.current) clearInterval(pollingRef.current)
       setTimeout(() => {
         setStep('select_operator')
         setOperator(null)
@@ -108,30 +110,67 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
     setStep('enter_phone')
   }
 
+  const startPolling = (ref: string) => {
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await api.get(`/freemopay/statut/${ref}`)
+        const status = res.data.status
+        if (status === 'SUCCESS') {
+          clearInterval(pollingRef.current!)
+          setStep('success')
+          onSuccess()
+        } else if (status === 'FAILED') {
+          clearInterval(pollingRef.current!)
+          setErrorMsg(res.data.reason || 'Paiement refusé ou annulé par l\'opérateur')
+          setStep('error')
+        }
+      } catch {
+        // Ignorer les erreurs temporaires de poll
+      }
+    }, 3000)
+  }
+
   const sendPaymentRequest = async () => {
     if (!operator || !validation.valid) return
     setStep('sending')
-    // Simulation : 2 secondes d'envoi de la demande à l'opérateur
-    await new Promise(r => setTimeout(r, 2000))
-    setStep('awaiting_validation')
-    setCountdown(180)
+    try {
+      const res = await api.post('/freemopay/initier-tranche', {
+        id_tranche: tranche.id_tranche,
+        phone: phoneClean,
+      })
+      const ref = res.data.reference
+      setReference(ref)
+      setStep('awaiting_validation')
+      setCountdown(180)
+      startPolling(ref)
+    } catch (e: any) {
+      console.error('Erreur initiation paiement:', e.response?.data)
+      setErrorMsg(e.response?.data?.message || 'Erreur lors de l\'envoi de la demande de paiement')
+      setStep('error')
+    }
   }
 
   const confirmPayment = async () => {
-    if (!operator || !phoneComplete) return
+    // Le paiement est géré automatiquement par le webhook + polling.
+    // Ce bouton force un re-poll immédiat si l'utilisateur a déjà validé.
+    if (!reference) return
     setStep('sending')
     try {
-      const ref = `ESC-${Date.now()}-${operator.toUpperCase()}`
-      await api.post(`/tranches/${tranche.id_tranche}/payer`, {
-        montant: tranche.montant_du_ttc,
-        mode_paiement: 'mobile_money',
-        reference_transaction: ref,
-      })
-      setReference(ref)
-      setStep('success')
+      const res = await api.get(`/freemopay/statut/${reference}`)
+      if (res.data.status === 'SUCCESS') {
+        setStep('success')
+        onSuccess()
+      } else if (res.data.status === 'FAILED') {
+        setErrorMsg(res.data.reason || 'Paiement refusé')
+        setStep('error')
+      } else {
+        // Toujours PENDING, reprendre l'attente
+        setStep('awaiting_validation')
+        startPolling(reference)
+      }
     } catch (e: any) {
-      console.error('Erreur paiement:', e.response?.data)
-      setErrorMsg(e.response?.data?.message || 'Erreur lors de l\'enregistrement du paiement')
+      setErrorMsg(e.response?.data?.message || 'Erreur de vérification')
       setStep('error')
     }
   }

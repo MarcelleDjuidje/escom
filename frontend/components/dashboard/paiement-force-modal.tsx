@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CreditCard, Loader2, Smartphone, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { X, CreditCard, Loader2, Smartphone, AlertCircle, CheckCircle2, ShieldCheck, Phone } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatXAF } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -85,9 +85,26 @@ const LIBELLES_CHAMPS: Record<string, string> = {
 
 export function PaiementForceModal({ open, onClose, panierPayload }: PaiementForceModalProps) {
   const router = useRouter()
-  const [step, setStep] = useState<'form' | 'processing' | 'success'>('form')
+  const [step, setStep] = useState<'form' | 'processing' | 'awaiting' | 'success'>('form')
   const [numero, setNumero] = useState('')
   const [error, setError] = useState('')
+  const [reference, setReference] = useState('')
+  const [idPanier, setIdPanier] = useState<number | null>(null)
+  const [countdown, setCountdown] = useState(180)
+  const [phoneUrgence, setPhoneUrgence] = useState('+237 690 000 000')
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    api.get('/public/config').then((r: any) => {
+      if (r.data?.phone_urgence) setPhoneUrgence(r.data.phone_urgence)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!open) {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [open])
 
   const operateur = detectOperateur(numero)
   const numeroLimpide = numero.replace(/[^0-9]/g, '').replace(/^237/, '')
@@ -101,11 +118,72 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
   const restantApresAcompte = panierPayload.total_ttc - montantAPayer
 
   const handleClose = () => {
-    if (step === 'processing') return
+    if (step === 'processing' || step === 'awaiting') {
+      if (!confirm('Voulez-vous vraiment annuler le paiement en cours ?')) return
+    }
+    if (pollingRef.current) clearInterval(pollingRef.current)
     setStep('form')
     setNumero('')
     setError('')
+    setReference('')
+    setIdPanier(null)
+    setCountdown(180)
     onClose()
+  }
+
+  const startPolling = (ref: string, panId: number) => {
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/freemopay/statut/${ref}`)
+        const status = res.data.status
+        if (status === 'SUCCESS') {
+          clearInterval(interval)
+          // Finaliser la commande côté backend
+          try {
+            const payRes = await api.post(`/paniers/${panId}/payer`, {
+              mode_paiement: 'mobile_money',
+              operateur,
+              numero_telephone: numeroLimpide,
+              reference_transaction: ref,
+              montant: montantAPayer,
+            })
+            const commande = payRes.data.commande
+            setStep('success')
+            setTimeout(() => {
+              toast.success(`Commande ${commande.numero_commande} créée avec succès !`)
+              router.push(`/dashboard/client/commandes/${commande.id_commande}`)
+              router.refresh()
+            }, 1500)
+          } catch (e: any) {
+            const msg = e.response?.data?.message || 'Erreur lors de la création de la commande'
+            setError(msg)
+            setStep('form')
+          }
+        } else if (status === 'FAILED') {
+          clearInterval(interval)
+          setError(res.data.reason || 'Paiement refusé ou annulé par l\'opérateur')
+          setStep('form')
+        }
+      } catch {
+        // Ignorer les erreurs temporaires
+      }
+    }, 3000)
+    pollingRef.current = interval
+
+    // Compte à rebours
+    const cdInterval = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          clearInterval(cdInterval)
+          clearInterval(interval)
+          setError('Délai expiré. Veuillez réessayer.')
+          setStep('form')
+          return 0
+        }
+        return c - 1
+      })
+    }, 1000)
   }
 
   const handlePayer = async () => {
@@ -121,33 +199,25 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
       // ÉTAPE 1 : Créer le panier
       const panierRes = await api.post('/paniers', panierPayload)
       const panier = panierRes.data
-      const idPanier = panier.id_panier
+      const pid = panier.id_panier
+      setIdPanier(pid)
 
-      // ÉTAPE 2 : Payer le panier
-      const refTransaction = `MOMO-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-
-      const payRes = await api.post(`/paniers/${idPanier}/payer`, {
-        mode_paiement: 'mobile_money',
-        operateur,
-        numero_telephone: numeroLimpide,
-        reference_transaction: refTransaction,
+      // ÉTAPE 2 : Initier le paiement Freemopay
+      const freemoRes = await api.post('/freemopay/initier-panier', {
+        id_panier: pid,
+        phone: numeroLimpide,
         montant: montantAPayer,
       })
 
-      const commande = payRes.data.commande
-      setStep('success')
-
-      // Petite pause pour montrer le succès, puis redirection
-      setTimeout(() => {
-        toast.success(`Commande ${commande.numero_commande} créée avec succès !`)
-        router.push(`/dashboard/client/commandes/${commande.id_commande}`)
-        router.refresh()
-      }, 1500)
+      const ref = freemoRes.data.reference
+      setReference(ref)
+      setCountdown(180)
+      setStep('awaiting')
+      startPolling(ref, pid)
 
     } catch (e: any) {
       console.error('Erreur paiement:', e.response?.data)
 
-      // Affichage clair des erreurs de validation Laravel
       const errors = e.response?.data?.errors
       let msg = e.response?.data?.message || 'Erreur lors du paiement'
 
@@ -164,6 +234,12 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
       setError(msg)
       setStep('form')
     }
+  }
+
+  const formatCountdown = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
   }
 
   return (
@@ -291,24 +367,69 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
             {step === 'processing' && (
               <div className="p-10 text-center">
                 <Loader2 className="w-12 h-12 animate-spin mx-auto text-escom-blue-600 mb-4" />
-                <p className="font-semibold mb-1">Traitement du paiement...</p>
+                <p className="font-semibold mb-1">Envoi de la demande...</p>
                 <p className="text-xs text-escom-neutral-500">
-                  Validation et création de votre commande
+                  Connexion à {operateur === 'MTN' ? 'MTN MoMo' : 'Orange Money'}
                 </p>
+              </div>
+            )}
+
+            {/* AWAITING VALIDATION */}
+            {step === 'awaiting' && (
+              <div className="p-6 text-center space-y-4">
+                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white shadow-lg ${
+                  operateur === 'MTN' ? 'bg-yellow-400' : 'bg-orange-500'
+                }`}>
+                  <Phone size={32} className="animate-pulse" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg mb-1">Demande envoyée !</p>
+                  <p className="text-sm text-escom-neutral-600">
+                    Un message a été envoyé au<br />
+                    <strong className="text-escom-neutral-900">+237 {numero}</strong>
+                  </p>
+                </div>
+                <div className="bg-escom-blue-50 p-4 rounded-lg text-left">
+                  <p className="font-semibold text-sm mb-2">Sur votre téléphone :</p>
+                  <ol className="text-xs text-escom-neutral-700 space-y-1 list-decimal list-inside">
+                    <li>Composez <strong>{operateur === 'MTN' ? '*126#' : '#150*4*4#'}</strong></li>
+                    <li>Saisissez votre code PIN</li>
+                    <li>Confirmez le paiement de <strong>{formatXAF(montantAPayer)}</strong></li>
+                  </ol>
+                </div>
+                <div>
+                  <p className="text-xs text-escom-neutral-500 mb-1">Temps restant</p>
+                  <p className="text-2xl font-bold text-escom-blue-700 font-mono">{formatCountdown(countdown)}</p>
+                </div>
+                <p className="text-xs text-escom-neutral-400">Vérification automatique en cours...</p>
+                <button onClick={handleClose} className="text-xs text-escom-neutral-500 hover:underline">
+                  Annuler le paiement
+                </button>
               </div>
             )}
 
             {/* SUCCESS */}
             {step === 'success' && (
-              <div className="p-10 text-center">
+              <div className="p-8 text-center space-y-4">
                 <motion.div
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                  className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </motion.div>
-                <p className="font-bold text-lg mb-1">Paiement validé !</p>
-                <p className="text-sm text-escom-neutral-600">Votre commande est en cours de création...</p>
+                <div>
+                  <p className="font-bold text-lg mb-1">Paiement validé !</p>
+                  <p className="text-sm text-escom-neutral-600">Votre commande est en cours de création...</p>
+                </div>
+                <div className="bg-escom-blue-50 border border-escom-blue-200 rounded-xl p-4 text-left">
+                  <p className="text-xs font-semibold text-escom-blue-700 uppercase mb-2 flex items-center gap-1">
+                    <Phone size={12} /> Contact d'urgence ESCOM
+                  </p>
+                  <p className="text-sm text-escom-blue-900 font-bold">{phoneUrgence}</p>
+                  <p className="text-xs text-escom-neutral-500 mt-1">
+                    Pour toute question urgente concernant votre commande ou votre paiement, contactez-nous par appel ou WhatsApp.
+                  </p>
+                </div>
               </div>
             )}
           </motion.div>

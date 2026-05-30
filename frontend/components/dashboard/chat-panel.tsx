@@ -91,8 +91,15 @@ export function ChatPanel({ showStartButton = true }: ChatPanelProps) {
     try {
       const formData = new FormData()
       if (input.trim()) formData.append('contenu', input.trim())
-      if (selectedFile) formData.append('fichier', selectedFile)
-      formData.append('type_message', 'texte')
+      if (selectedFile) {
+        formData.append('fichier', selectedFile)
+        const isImg = selectedFile.type.startsWith('image/')
+        const isAudio = selectedFile.type.startsWith('audio/')
+        const isVideo = selectedFile.type.startsWith('video/')
+        formData.append('type_message', isImg ? 'image' : isAudio ? 'audio' : isVideo ? 'video' : 'document')
+      } else {
+        formData.append('type_message', 'texte')
+      }
 
       const res = await api.post(
         `/chat/conversations/${selected.id_conversation}/messages`,

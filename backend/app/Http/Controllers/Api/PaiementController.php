@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\FactureTranche;
 use App\Models\LogActivite;
+use App\Models\PlanPaiement;
 use App\Models\TranchePaiement;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,10 +50,32 @@ class PaiementController extends Controller
             }
         });
 
+        // Fallback PHP : débloquer la livraison si toutes les tranches sont payées
+        // (au cas où le trigger MySQL n'aurait pas mis à jour livraison_bloquee)
+        $this->debloquerSiSolde($tranche->id_plan_paiement);
+
         return response()->json([
             'message' => 'Paiement enregistré avec succès',
             'tranche' => $tranche->fresh()->load('plan.commande'),
         ]);
+    }
+
+    private function debloquerSiSolde(int $idPlan): void
+    {
+        $plan = PlanPaiement::with('commande')->find($idPlan);
+        if (!$plan || !$plan->commande) return;
+
+        // Recalculer le total payé depuis les tranches (source de vérité)
+        $totalPaye = TranchePaiement::where('id_plan_paiement', $idPlan)
+            ->where('statut', 'payee')
+            ->sum('montant_paye');
+
+        if ($totalPaye >= $plan->montant_total_ttc) {
+            $plan->commande->update(['livraison_bloquee' => 0]);
+            if ($plan->statut_global !== 'solde') {
+                $plan->update(['statut_global' => 'solde', 'date_solde' => now()]);
+            }
+        }
     }
 
     public function planTranches(int $idPlan): JsonResponse

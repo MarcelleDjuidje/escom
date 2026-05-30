@@ -100,10 +100,14 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'id_categorie' => 'required|exists:categories_services,id_categorie',
+            'plateforme' => 'nullable|string',
+            'type_prestation' => 'nullable|string',
             'libelle' => 'required|string|max:150',
             'description' => 'nullable|string',
-            'plateforme' => 'nullable|string',
-            'prix_pack_mensuel_ht' => 'required|numeric|min:0',
+            'frequence' => 'nullable|string',
+            'nb_publications_incluses' => 'nullable|integer',
+            'budget_pub_inclus_ht' => 'nullable|numeric|min:0',
+            'prix_ht' => 'required|numeric|min:0',
             'image' => 'nullable|string',
             'id_employe_responsable' => 'nullable|exists:employes,id_employe',
         ]);

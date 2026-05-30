@@ -237,6 +237,16 @@ export default function CommandeDetailPage() {
                             </p>
                           </div>
                         )}
+                        {/* Overlay "HD disponible" quand la livraison est débloquée */}
+                        {isImage && !livraisonBloquee && (
+                          <div className="absolute inset-0 bg-green-900/60 flex items-center justify-center">
+                            <div className="text-center text-white">
+                              <CheckCircle2 className="w-8 h-8 mx-auto mb-1" />
+                              <p className="text-xs font-bold">Version HD sans filigrane</p>
+                              <p className="text-[10px] opacity-80">Cliquez sur Télécharger HD</p>
+                            </div>
+                          </div>
+                        )}
                         {l.est_version_finale && (
                           <span className="absolute top-2 left-2 bg-escom-gold-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                             ⭐ FINALE

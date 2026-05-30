@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Palette, Printer, Megaphone, Target, Loader2, X, ShoppingCart, Clock, Search } from 'lucide-react'
+import { Palette, Printer, Megaphone, Target, Loader2, X, ShoppingCart, Clock, Search, Tag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { formatXAF } from '@/lib/utils'
@@ -10,9 +10,9 @@ import { useAuth } from '@/lib/auth-context'
 
 const TABS = [
   { id: 'conception', label: 'Conception', icon: Palette, endpoint: '/public/services/conception', idKey: 'id_service_conception', priceKey: 'prix_unitaire_ht' },
-  { id: 'impression', label: 'Impression', icon: Printer, endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_base_ht' },
-  { id: 'social', label: 'Social Media', icon: Megaphone, endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_pack_mensuel_ht' },
-  { id: 'campagnes', label: 'Campagnes', icon: Target, endpoint: '/public/services/campagnes', idKey: 'id_campagne', priceKey: 'prix_unitaire_base_ht' },
+  { id: 'impression', label: 'Impression', icon: Printer, endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_ht' },
+  { id: 'social', label: 'Social Media', icon: Megaphone, endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_ht' },
+  { id: 'campagnes', label: 'Campagnes', icon: Target, endpoint: '/public/services/campagnes', idKey: 'id_campagne', priceKey: 'prix_indicatif_min' },
 ]
 
 export default function ServicesPage() {
@@ -23,6 +23,11 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<any>(null)
   const [search, setSearch] = useState('')
+  const [promotions, setPromotions] = useState<any[]>([])
+
+  useEffect(() => {
+    api.get('/public/promotions').then((r: any) => setPromotions(r.data || [])).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (data[active.id]) return
@@ -42,15 +47,19 @@ export default function ServicesPage() {
           libelle: service.libelle,
           prix: service[active.priceKey],
         }))
+        sessionStorage.setItem(
+          'escom_redirect_after_login',
+          `/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`
+        )
       } catch {}
-      router.push('/login?redirect=/services')
+      router.push('/login')
       return
     }
     if (user.is_staff) {
       alert('Cette action est réservée aux clients.')
       return
     }
-    router.push(`/dashboard/client/commandes?nouveau=1&type=${active.id}&service=${service[active.idKey]}`)
+    router.push(`/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`)
   }
 
   const filteredItems = (data[active.id] || []).filter((s: any) => {
@@ -73,6 +82,42 @@ export default function ServicesPage() {
           </p>
         </div>
       </section>
+
+      {promotions.length > 0 && (
+        <section className="py-10 bg-escom-gold-50 border-b border-escom-gold-200">
+          <div className="container-escom">
+            <div className="flex items-center gap-2 mb-5">
+              <Tag className="text-escom-gold-600" size={20} />
+              <h2 className="text-xl font-bold text-escom-blue-900">Promotions en cours</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {promotions.map((p: any) => (
+                <motion.div key={p.id_promotion}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-escom-gold-200 rounded-xl p-4 flex items-start gap-4 shadow-sm"
+                >
+                  <div className="w-14 h-14 rounded-xl bg-escom-gold-500 text-white flex flex-col items-center justify-center shrink-0 text-center leading-tight">
+                    <span className="text-lg font-black">-{p.taux_remise_pct}%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-escom-blue-900 truncate">{p.libelle_service}</p>
+                    {p.notes && <p className="text-xs text-escom-neutral-500 mb-2">{p.notes}</p>}
+                    <div className="flex items-center gap-2">
+                      <span className="text-escom-neutral-400 line-through text-sm">{formatXAF(p.prix_original_ht)}</span>
+                      <span className="text-escom-gold-700 font-bold">{formatXAF(p.prix_promo_ht)}</span>
+                    </div>
+                    {p.date_fin && (
+                      <p className="text-[11px] text-escom-neutral-400 mt-1 flex items-center gap-1">
+                        <Clock size={10} /> Expire le {new Date(p.date_fin).toLocaleDateString('fr-FR')}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-16 bg-white">
         <div className="container-escom">
@@ -122,7 +167,7 @@ export default function ServicesPage() {
                   className="card-escom p-6 flex flex-col cursor-pointer hover:border-escom-blue-300"
                   onClick={() => setSelected(s)}
                 >
-                  <h3 className="text-lg font-bold mb-2">{s.libelle}</h3>
+                  <h3 className="text-lg font-bold mb-2">{s.libelle || s.titre}</h3>
                   <p className="text-sm text-escom-neutral-600 mb-4 line-clamp-3 flex-1">{s.description}</p>
                   {s.delai_realisation_jours && (
                     <p className="text-xs text-escom-neutral-500 mb-3 flex items-center gap-1">
@@ -170,7 +215,7 @@ export default function ServicesPage() {
                   <X size={20} />
                 </button>
                 <active.icon className="w-10 h-10 text-escom-gold-300 mb-2" />
-                <h2 className="text-2xl font-bold">{selected.libelle}</h2>
+                <h2 className="text-2xl font-bold">{selected.libelle || selected.titre}</h2>
                 <p className="text-escom-blue-100 mt-1 text-sm">{active.label}</p>
               </div>
 

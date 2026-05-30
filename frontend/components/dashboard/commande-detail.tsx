@@ -56,6 +56,8 @@ export function CommandeDetail({ commandeId, viewerRole }: CommandeDetailProps) 
   const [showStatutModal, setShowStatutModal] = useState(false)
   const [showEmployeModal, setShowEmployeModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showBatModal, setShowBatModal] = useState(false)
+  const [batConfirme, setBatConfirme] = useState(false)
   const [employes, setEmployes] = useState<any[]>([])
   const [updating, setUpdating] = useState(false)
 
@@ -78,12 +80,19 @@ export function CommandeDetail({ commandeId, viewerRole }: CommandeDetailProps) 
     }).catch(() => setEmployes([]))
   }
 
-  const changerStatut = async (nouveauStatut: string) => {
+  const changerStatut = async (nouveauStatut: string, forcerSansBat = false) => {
+    // Bloquer le passage en production si impression et BAT non confirmé
+    if (nouveauStatut === 'en_production' && !forcerSansBat) {
+      setBatConfirme(false)
+      setShowBatModal(true)
+      return
+    }
     setUpdating(true)
     try {
       await api.patch(`/commandes/${commandeId}/statut`, { statut: nouveauStatut })
       toast.success(`Statut changé en "${STATUT_FR[nouveauStatut]}"`)
       setShowStatutModal(false)
+      setShowBatModal(false)
       fetchCommande()
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Erreur')
@@ -342,6 +351,46 @@ export function CommandeDetail({ commandeId, viewerRole }: CommandeDetailProps) 
           onConfirm={annulerCommande}
           loading={updating} />
       )}
+
+      {/* MODALE BON À TIRER */}
+      {isAdmin && showBatModal && (
+        <div className="fixed inset-0 z-50 bg-escom-blue-950/70 backdrop-blur flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold">Validation Bon à Tirer (BAT)</h3>
+                <p className="text-xs text-escom-neutral-500">Service Impression — Étape obligatoire</p>
+              </div>
+            </div>
+            <p className="text-sm text-escom-neutral-700 mb-5">
+              Avant de lancer la production, assurez-vous que le client a validé le bon à tirer.
+              Sans cette validation, des erreurs coûteuses peuvent survenir.
+            </p>
+            <label className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer mb-5">
+              <input type="checkbox" checked={batConfirme} onChange={e => setBatConfirme(e.target.checked)}
+                className="mt-0.5 shrink-0" />
+              <span className="text-sm font-medium text-amber-900">
+                Je confirme que le client a validé le bon à tirer et autorise le lancement en production.
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <button onClick={() => setShowBatModal(false)} className="btn-outline flex-1">
+                Annuler
+              </button>
+              <button
+                disabled={!batConfirme || updating}
+                onClick={() => changerStatut('en_production', true)}
+                className="btn-primary flex-1">
+                {updating ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                Lancer en production
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -497,6 +546,15 @@ function TabLivrables({ livrables, commande, viewerRole, user, onRefresh }: any)
                       <p className="text-[10px] text-escom-neutral-500 uppercase">
                         {l.type_fichier?.split('/')[1] || 'fichier'}
                       </p>
+                    </div>
+                  )}
+                  {/* Overlay "HD disponible" quand livraison débloquée */}
+                  {isImage && previewUrl && !livraisonBloquee && (
+                    <div className="absolute inset-0 bg-green-900/60 flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <CheckCircle2 className="w-8 h-8 mx-auto mb-1" />
+                        <p className="text-xs font-bold">Version HD sans filigrane</p>
+                      </div>
                     </div>
                   )}
                   {l.est_version_finale && (

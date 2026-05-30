@@ -13,9 +13,9 @@ import { toast } from 'sonner'
 
 const TYPE_ENDPOINTS: Record<string, { endpoint: string; idKey: string; priceKey: string; label: string; typeBackend: string }> = {
   conception: { endpoint: '/public/services/conception', idKey: 'id_service_conception', priceKey: 'prix_unitaire_ht', label: 'Conception', typeBackend: 'CONCEPTION' },
-  impression: { endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_base_ht', label: 'Impression', typeBackend: 'IMPRESSION' },
-  social: { endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_pack_mensuel_ht', label: 'Social Media', typeBackend: 'SOCIAL' },
-  campagnes: { endpoint: '/public/services/campagnes', idKey: 'id_campagne', priceKey: 'prix_unitaire_base_ht', label: 'Campagne', typeBackend: 'CAMPAGNE' },
+  impression: { endpoint: '/public/services/impression', idKey: 'id_service_impression', priceKey: 'prix_unitaire_ht', label: 'Impression', typeBackend: 'IMPRESSION' },
+  social: { endpoint: '/public/services/social', idKey: 'id_service_social', priceKey: 'prix_ht', label: 'Social Media', typeBackend: 'SOCIAL' },
+  campagnes: { endpoint: '/public/services/campagnes', idKey: 'id_campagne', priceKey: 'prix_indicatif_min', label: 'Campagne', typeBackend: 'CAMPAGNE' },
 }
 
 function NouvelleCommandeContent() {
@@ -124,7 +124,9 @@ function NouvelleCommandeContent() {
       tranches_prevues: planPaiement === 'tranches' ? tranchesPayload : undefined,
       mode_livraison: modeLivraison,
       date_livraison_souhaitee: dateLivraison,
-      notes: notes || null,
+      notes: modeLivraison === 'livraison_physique' && adresseLivraison.trim()
+        ? `Adresse de livraison : ${adresseLivraison.trim()}${notes ? '\n' + notes : ''}`
+        : notes || null,
     }
   }
 
