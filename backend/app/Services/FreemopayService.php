@@ -46,9 +46,9 @@ class FreemopayService
         ]);
 
         if (!$response->successful()) {
-            throw new \RuntimeException(
-                'Freemopay: erreur ' . $response->status() . ' — ' . ($response->json('message') ?? $response->body())
-            );
+            $msg = $response->json('message') ?? $response->body();
+            if (is_array($msg)) $msg = implode(', ', $msg);
+            throw new \RuntimeException('Freemopay: erreur ' . $response->status() . ' — ' . $msg);
         }
 
         return $response->json();
@@ -66,9 +66,9 @@ class FreemopayService
             ->get("{$this->baseUrl}/api/v2/payment/{$reference}");
 
         if (!$response->successful()) {
-            throw new \RuntimeException(
-                'Freemopay statut: erreur ' . $response->status() . ' — ' . ($response->json('message') ?? $response->body())
-            );
+            $msg = $response->json('message') ?? $response->body();
+            if (is_array($msg)) $msg = implode(', ', $msg);
+            throw new \RuntimeException('Freemopay statut: erreur ' . $response->status() . ' — ' . $msg);
         }
 
         return $response->json();
