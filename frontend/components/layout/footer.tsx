@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container-escom py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
-            <div className="bg-white p-3 rounded-xl inline-block mb-4">
+            <div className="p-3 rounded-xl inline-block mb-4">
               <Logo size={48} withText />
             </div>
             <p className="text-sm text-escom-blue-100 leading-relaxed">
@@ -36,9 +36,8 @@ export function Footer() {
           <div>
             <h3 className="text-escom-gold-400 font-semibold mb-4 uppercase text-sm tracking-wide">Nos agences</h3>
             <ul className="space-y-3 text-sm">
-              <li className="flex gap-2"><MapPin size={16} className="text-escom-gold-400 mt-0.5 shrink-0" /><span><strong className="text-white">Douala</strong><br/>Akwa, Boulevard de la Liberté</span></li>
-              <li className="flex gap-2"><MapPin size={16} className="text-escom-gold-400 mt-0.5 shrink-0" /><span><strong className="text-white">Yaoundé</strong><br/>Bastos, Carrefour Warda</span></li>
-              <li className="flex gap-2"><MapPin size={16} className="text-escom-gold-400 mt-0.5 shrink-0" /><span><strong className="text-white">Bafoussam</strong><br/>Centre commercial</span></li>
+              <li className="flex gap-2"><MapPin size={16} className="text-escom-gold-400 mt-0.5 shrink-0" /><span><strong className="text-white">Douala</strong><br/>Ndogbong, Entree de l'IUT</span></li>
+              <li className="flex gap-2"><MapPin size={16} className="text-escom-gold-400 mt-0.5 shrink-0" /><span><strong className="text-white">Bafoussam</strong><br/>Tamdja, 2e Rue Finances (a environ 100 metres apres l'agence Camtel)</span></li>
             </ul>
           </div>
 
@@ -46,7 +45,7 @@ export function Footer() {
             <h3 className="text-escom-gold-400 font-semibold mb-4 uppercase text-sm tracking-wide">Contact</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex gap-2"><Mail size={16} className="text-escom-gold-400 mt-0.5" /><a href="mailto:contact@escom.cm" className="hover:text-escom-gold-300 transition">contact@escom.cm</a></li>
-              <li className="flex gap-2"><Phone size={16} className="text-escom-gold-400 mt-0.5" /><a href="tel:+237600000000" className="hover:text-escom-gold-300 transition">+237 6XX XXX XXX</a></li>
+              <li className="flex gap-2"><Phone size={16} className="text-escom-gold-400 mt-0.5" /><a href="tel:+237600000000" className="hover:text-escom-gold-300 transition">+237 659 404 339</a></li>
               <li className="flex gap-2"><Phone size={16} className="text-escom-gold-400 mt-0.5" /><span>Lun-Ven : 8h–18h<br/>Sam : 9h–13h</span></li>
             </ul>
           </div>

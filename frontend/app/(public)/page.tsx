@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Palette, Printer, Megaphone, Target, Sparkles, Users, Award, Clock, Star } from 'lucide-react'
 import { api } from '@/lib/api'
+import Image from 'next/image'
 
 export default function HomePage() {
   const [avis, setAvis] = useState<any[]>([])
@@ -43,28 +44,19 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
-              className="relative"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="relative flex justify-center items-center"
             >
-              <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { icon: Palette, label: 'Design', color: 'from-pink-400 to-purple-500' },
-                    { icon: Printer, label: 'Print', color: 'from-emerald-400 to-teal-500' },
-                    { icon: Megaphone, label: 'Social', color: 'from-amber-400 to-orange-500' },
-                    { icon: Target, label: 'Campagnes', color: 'from-blue-400 to-indigo-500' },
-                  ].map((s, i) => (
-                    <motion.div key={s.label}
-                      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + i * 0.1 }}
-                      className={`bg-gradient-to-br ${s.color} rounded-2xl p-6 text-center hover:scale-105 transition`}
-                    >
-                      <s.icon className="w-10 h-10 mx-auto mb-2" />
-                      <p className="font-semibold">{s.label}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+              <Image
+                src="/assets/images/logo.png"
+                alt="Illustration ESCOM"
+                width={650}
+                height={650}
+                priority
+                className="w-full max-w-xl rounded-3xl shadow-2xl object-cover"
+              />
             </motion.div>
           </div>
         </div>

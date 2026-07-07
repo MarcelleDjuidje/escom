@@ -186,7 +186,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
   const formatCountdown = (s: number) => {
     const m = Math.floor(s / 60)
     const sec = s % 60
-    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    return `${String(m).padStart(1, '0')}:${String(sec).padStart(1, '0')}`
   }
 
   return (
