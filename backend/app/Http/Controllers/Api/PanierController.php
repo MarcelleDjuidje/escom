@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campagne;
 use App\Models\Client;
 use App\Models\Commande;
+use App\Models\DemandeCampagne;
 use App\Models\Employe;
 use App\Models\FactureTranche;
 use App\Models\NotificationInterne;
@@ -46,11 +47,30 @@ class PanierController extends Controller
             'mode_livraison' => 'required|in:remise_en_main,envoi_email,livraison_physique',
             'date_livraison_souhaitee' => 'nullable|date|after:today',
             'notes' => 'nullable|string|max:2000',
+            'id_demande_campagne' => 'nullable|integer|exists:demandes_campagne,id_demande',
         ]);
 
         $user = $request->user();
         if (!($user instanceof Client)) {
             return response()->json(['message' => 'Seuls les clients peuvent créer un panier'], 403);
+        }
+
+        // Les campagnes nécessitent obligatoirement un devis accepté
+        foreach ($validated['lignes'] as $ligne) {
+            if (($ligne['type_service'] ?? '') === 'CAMPAGNE') {
+                if (empty($validated['id_demande_campagne'])) {
+                    return response()->json([
+                        'message' => 'Les campagnes nécessitent un devis accepté. Veuillez passer par une demande de campagne.',
+                    ], 422);
+                }
+                $demande = DemandeCampagne::find($validated['id_demande_campagne']);
+                if (!$demande || $demande->id_client !== $user->id_client) {
+                    return response()->json(['message' => 'Demande de campagne introuvable'], 404);
+                }
+                if ($demande->statut !== 'acceptee') {
+                    return response()->json(['message' => 'Le devis de cette campagne n\'a pas encore été accepté'], 422);
+                }
+            }
         }
 
         // Vérification anti-doublon : si un panier identique en attente existe < 5 min, on le réutilise

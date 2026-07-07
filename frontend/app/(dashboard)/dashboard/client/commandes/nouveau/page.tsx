@@ -40,7 +40,16 @@ function NouvelleCommandeContent() {
 
   const config = TYPE_ENDPOINTS[typeParam] || TYPE_ENDPOINTS.conception
 
+  // Les campagnes passent obligatoirement par un devis (demande de campagne)
+  const demandeId = searchParams.get('demande')
+  const prixDevis = searchParams.get('prix')
+
   useEffect(() => {
+    if (typeParam === 'campagnes' && !demandeId) {
+      toast.error('Les campagnes nécessitent un devis accepté.')
+      router.replace('/dashboard/client/demandes')
+      return
+    }
     setLoading(true)
     api.get(config.endpoint)
       .then((r: any) => {
@@ -69,7 +78,10 @@ function NouvelleCommandeContent() {
     } catch {}
   }, [services])
 
-  const prixUnitaire = service ? Number(service[config.priceKey] || 0) : 0
+  // Pour les campagnes sur devis, le prix est celui du devis accepté
+  const prixUnitaire = (typeParam === 'campagnes' && prixDevis)
+    ? Number(prixDevis)
+    : (service ? Number(service[config.priceKey] || 0) : 0)
   const totalHT = prixUnitaire * quantite
   const totalTTC = totalHT
 
@@ -127,6 +139,7 @@ function NouvelleCommandeContent() {
       notes: modeLivraison === 'livraison_physique' && adresseLivraison.trim()
         ? `Adresse de livraison : ${adresseLivraison.trim()}${notes ? '\n' + notes : ''}`
         : notes || null,
+      ...(demandeId ? { id_demande_campagne: Number(demandeId) } : {}),
     }
   }
 
@@ -179,13 +192,13 @@ function NouvelleCommandeContent() {
 
             <div className="card-escom p-5">
               <h2 className="font-semibold mb-3">1. Type de service</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {Object.entries(TYPE_ENDPOINTS).map(([k, v]) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(TYPE_ENDPOINTS).filter(([k]) => k !== 'campagnes' || demandeId).map(([k, v]) => (
                   <button key={k}
-                    onClick={() => router.push(`/dashboard/client/commandes/nouveau?type=${k}`)}
+                    onClick={() => k === 'campagnes' ? null : router.push(`/dashboard/client/commandes/nouveau?type=${k}`)}
                     className={`p-3 rounded-lg text-sm font-semibold transition ${
                       typeParam === k ? 'bg-escom-blue-600 text-white' : 'bg-escom-neutral-100 hover:bg-escom-neutral-200'
-                    }`}>
+                    } ${k === 'campagnes' ? 'cursor-default' : ''}`}>
                     {v.label}
                   </button>
                 ))}

@@ -150,7 +150,7 @@ export default function ClientDemandes() {
                   )}
                   {d.statut === 'acceptee' && (
                     <button
-                      onClick={() => router.push(`/dashboard/client/commandes/nouveau?type=campagnes&service=${d.id_campagne}`)}
+                      onClick={() => router.push(`/dashboard/client/commandes/nouveau?type=campagnes&service=${d.id_campagne}&demande=${d.id_demande}&prix=${d.prix_propose}`)}
                       className="btn-primary text-sm w-full mt-3">
                       Commander maintenant
                     </button>

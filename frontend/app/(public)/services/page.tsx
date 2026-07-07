@@ -39,18 +39,23 @@ export default function ServicesPage() {
   }, [active])
 
   const handleOrder = (service: any) => {
+    // Les campagnes passent obligatoirement par une demande de devis
+    const isCampagne = active.id === 'campagnes'
+    const target = isCampagne
+      ? '/dashboard/client/demandes'
+      : `/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`
+
     if (!user) {
       try {
-        sessionStorage.setItem('escom_order_intent', JSON.stringify({
-          type: active.id,
-          id: service[active.idKey],
-          libelle: service.libelle,
-          prix: service[active.priceKey],
-        }))
-        sessionStorage.setItem(
-          'escom_redirect_after_login',
-          `/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`
-        )
+        if (!isCampagne) {
+          sessionStorage.setItem('escom_order_intent', JSON.stringify({
+            type: active.id,
+            id: service[active.idKey],
+            libelle: service.libelle,
+            prix: service[active.priceKey],
+          }))
+        }
+        sessionStorage.setItem('escom_redirect_after_login', target)
       } catch {}
       router.push('/login')
       return
@@ -59,7 +64,7 @@ export default function ServicesPage() {
       alert('Cette action est réservée aux clients.')
       return
     }
-    router.push(`/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`)
+    router.push(target)
   }
 
   const filteredItems = (data[active.id] || []).filter((s: any) => {
@@ -183,7 +188,10 @@ export default function ServicesPage() {
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); handleOrder(s) }}
                       className="btn-primary !py-2 !px-3 text-sm">
-                      <ShoppingCart size={14} /> Commander
+                      {active.id === 'campagnes'
+                        ? <><Target size={14} /> Demander un devis</>
+                        : <><ShoppingCart size={14} /> Commander</>
+                      }
                     </button>
                   </div>
                 </motion.div>
@@ -259,8 +267,10 @@ export default function ServicesPage() {
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setSelected(null)} className="btn-outline flex-1">Fermer</button>
                   <button onClick={() => handleOrder(selected)} className="btn-primary flex-1">
-                    <ShoppingCart size={16} />
-                    {user ? 'Commander' : 'S\'inscrire pour commander'}
+                    {active.id === 'campagnes'
+                      ? <><Target size={16} /> {user ? 'Demander un devis' : 'S\'inscrire pour demander un devis'}</>
+                      : <><ShoppingCart size={16} /> {user ? 'Commander' : 'S\'inscrire pour commander'}</>
+                    }
                   </button>
                 </div>
               </div>
