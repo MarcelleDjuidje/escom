@@ -135,7 +135,7 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
     if (pollingRef.current) clearInterval(pollingRef.current)
     const interval = setInterval(async () => {
       try {
-        const res = await api.get(`/freemopay/statut/${ref}`)
+        const res = await api.get(`/kpay/statut/${ref}`)
         const status = res.data.status
         if (status === 'SUCCESS') {
           clearInterval(interval)
@@ -202,18 +202,19 @@ export function PaiementForceModal({ open, onClose, panierPayload }: PaiementFor
       const pid = panier.id_panier
       setIdPanier(pid)
 
-      // ÉTAPE 2 : Initier le paiement Freemopay
-      const freemoRes = await api.post('/freemopay/initier-panier', {
+      // ÉTAPE 2 : Initier le paiement KPay
+      const kpayRes = await api.post('/kpay/initier-panier', {
         id_panier: pid,
         phone: numeroLimpide,
         montant: montantAPayer,
+        operateur: operateur,
       })
 
-      const ref = freemoRes.data.reference
-      setReference(ref)
+      const kpayId = kpayRes.data.kpay_id
+      setReference(kpayId)
       setCountdown(180)
       setStep('awaiting')
-      startPolling(ref, pid)
+      startPolling(kpayId, pid)
 
     } catch (e: any) {
       console.error('Erreur paiement:', e.response?.data)

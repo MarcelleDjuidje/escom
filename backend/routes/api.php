@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvisClientController;
-use App\Http\Controllers\Api\FreemopayController;
+use App\Http\Controllers\Api\KPayController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CommandeController;
@@ -148,10 +148,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Avis client
     Route::post('avis', [AvisClientController::class, 'store']);
 
-    // Freemopay (Mobile Money)
-    Route::post('freemopay/initier-panier', [FreemopayController::class, 'initierPanier']);
-    Route::post('freemopay/initier-tranche', [FreemopayController::class, 'initierTranche']);
-    Route::get('freemopay/statut/{reference}', [FreemopayController::class, 'statut']);
+    // KPay (Mobile Money)
+    Route::post('kpay/initier-panier', [KPayController::class, 'initierPanier']);
+    Route::post('kpay/initier-tranche', [KPayController::class, 'initierTranche']);
+    Route::get('kpay/statut/{paymentId}', [KPayController::class, 'statut']);
 
     // ADMIN ROUTES
     Route::prefix('admin')->group(function () {
@@ -239,8 +239,8 @@ Route::get('chat/file/{filename}', function ($filename) {
 // Preview livrables (public car nom aléatoire + image filigranée)
 Route::get('livrables/preview/{filename}', [LivrableController::class, 'servePreview'])->where('filename', '[A-Za-z0-9._-]+');
 
-// Freemopay webhook (public, pas d'auth Sanctum)
-Route::post('freemopay/webhook', [FreemopayController::class, 'webhook']);
+// KPay webhook (public, pas d'auth Sanctum)
+Route::post('kpay/webhook', [KPayController::class, 'webhook']);
 
 // Health check
 Route::get('health', fn() => response()->json(['status' => 'ok', 'time' => now()->toIso8601String()]));

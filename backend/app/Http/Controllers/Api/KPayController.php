@@ -7,19 +7,19 @@ use App\Models\FactureTranche;
 use App\Models\Panier;
 use App\Models\PlanPaiement;
 use App\Models\TranchePaiement;
-use App\Services\FreemopayService;
+use App\Services\KPayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class FreemopayController extends Controller
+class KPayController extends Controller
 {
-    public function __construct(private FreemopayService $freemopay) {}
+    public function __construct(private KPayService $kpay) {}
 
     /**
      * Initier un paiement Mobile Money pour un panier.
-     * POST /api/freemopay/initier-panier
+     * POST /api/kpay/initier-panier
      */
     public function initierPanier(Request $request): JsonResponse
     {
@@ -27,130 +27,161 @@ class FreemopayController extends Controller
             'id_panier' => 'required|integer|exists:paniers,id_panier',
             'phone'     => 'required|string|min:9|max:15',
             'montant'   => 'required|numeric|min:1',
+            'operateur' => 'nullable|in:MTN,Orange',
         ]);
 
         $panier = Panier::findOrFail($validated['id_panier']);
         $user   = $request->user();
 
         if ($panier->id_client !== $user->id_client) {
-            return response()->json(['message' => 'Accès refusé'], 403);
+            return response()->json(['message' => 'Acces refuse'], 403);
         }
 
         if ($panier->statut === 'converti') {
-            return response()->json(['message' => 'Ce panier a déjà été payé'], 409);
+            return response()->json(['message' => 'Ce panier a deja ete paye'], 409);
         }
 
         if ($panier->statut === 'abandonne_24h' || ($panier->expire_le && $panier->expire_le->isPast())) {
-            return response()->json(['message' => 'Ce panier a expiré'], 410);
+            return response()->json(['message' => 'Ce panier a expire'], 410);
         }
 
-        $phone      = $this->normaliserPhone($validated['phone']);
         $externalId = 'panier_' . $panier->id_panier . '_' . time();
 
-        $result = $this->freemopay->initierCollecte(
-            $phone,
+        $result = $this->kpay->initPaymentUssd(
+            $validated['phone'],
             (float) $validated['montant'],
-            $externalId
+            $externalId,
+            $validated['operateur'] ?? null,
+            "Panier {$panier->numero_panier}"
         );
 
         $panier->update([
-            'freemopay_reference' => $result['reference'],
-            'freemopay_statut'    => 'pending',
+            'kpay_id'     => $result['id'] ?? null,
+            'kpay_statut' => 'pending',
         ]);
 
         return response()->json([
-            'reference' => $result['reference'],
-            'status'    => 'PENDING',
-            'id_panier' => $panier->id_panier,
+            'kpay_id'    => $result['id'] ?? null,
+            'reference'  => $result['reference'] ?? null,
+            'status'     => 'PENDING',
+            'id_panier'  => $panier->id_panier,
         ], 201);
     }
 
     /**
      * Initier un paiement Mobile Money pour une tranche existante.
-     * POST /api/freemopay/initier-tranche
+     * POST /api/kpay/initier-tranche
      */
     public function initierTranche(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'id_tranche' => 'required|integer|exists:tranches_paiement,id_tranche',
             'phone'      => 'required|string|min:9|max:15',
+            'operateur'  => 'nullable|in:MTN,Orange',
         ]);
 
         $tranche = TranchePaiement::findOrFail($validated['id_tranche']);
 
         if ($tranche->statut === 'payee') {
-            return response()->json(['message' => 'Cette tranche est déjà payée'], 422);
+            return response()->json(['message' => 'Cette tranche est deja payee'], 422);
         }
 
-        $phone      = $this->normaliserPhone($validated['phone']);
         $externalId = 'tranche_' . $tranche->id_tranche . '_' . time();
 
-        $result = $this->freemopay->initierCollecte(
-            $phone,
+        $result = $this->kpay->initPaymentUssd(
+            $validated['phone'],
             (float) $tranche->montant_du_ttc,
-            $externalId
+            $externalId,
+            $validated['operateur'] ?? null,
+            "Tranche {$tranche->numero_tranche} — {$tranche->libelle}"
         );
 
-        // Stocker la référence dans le champ existant
-        $tranche->update(['reference_transaction' => $result['reference']]);
+        $tranche->update([
+            'reference_transaction' => $result['id'] ?? null,
+        ]);
 
         return response()->json([
-            'reference'  => $result['reference'],
+            'kpay_id'    => $result['id'] ?? null,
+            'reference'  => $result['reference'] ?? null,
             'status'     => 'PENDING',
             'id_tranche' => $tranche->id_tranche,
         ], 201);
     }
 
     /**
-     * Vérifier le statut d'un paiement via Freemopay.
-     * GET /api/freemopay/statut/{reference}
+     * Verifier le statut d'un paiement via KPay.
+     * GET /api/kpay/statut/{paymentId}
      */
-    public function statut(string $reference): JsonResponse
+    public function statut(string $paymentId): JsonResponse
     {
-        $statut = $this->freemopay->getStatut($reference);
-        return response()->json($statut);
+        $statut = $this->kpay->getPaymentStatus($paymentId);
+
+        // Normaliser le statut pour le frontend
+        $status = strtoupper($statut['status'] ?? 'PENDING');
+        $mapped = match ($status) {
+            'COMPLETED' => 'SUCCESS',
+            'FAILED', 'CANCELLED', 'EXPIRED' => 'FAILED',
+            default => $status,
+        };
+
+        return response()->json([
+            'status'        => $mapped,
+            'kpay_id'       => $statut['id'] ?? $paymentId,
+            'reference'     => $statut['reference'] ?? null,
+            'amount'        => $statut['amount'] ?? null,
+            'failureReason' => $statut['failureReason'] ?? null,
+            'reason'        => $statut['failureReason'] ?? null,
+        ]);
     }
 
     /**
-     * Webhook reçu depuis Freemopay après une transaction (SUCCESS ou FAILED).
-     * POST /api/freemopay/webhook  — route publique
+     * Webhook recu depuis KPay apres une transaction.
+     * POST /api/kpay/webhook — route publique
      */
     public function webhook(Request $request): JsonResponse
     {
-        $data = $request->all();
-        Log::info('Freemopay webhook', $data);
+        $rawBody   = $request->getContent();
+        $signature = $request->header('x-kpay-signature', '');
 
-        $reference  = $data['reference']  ?? null;
-        $status     = $data['status']     ?? null;
+        // Verifier la signature HMAC
+        if ($signature && !$this->kpay->verifyWebhookSignature($rawBody, $signature)) {
+            Log::warning('KPay webhook: signature invalide');
+            return response()->json(['ok' => false, 'message' => 'Signature invalide'], 401);
+        }
+
+        $data = $request->all();
+        Log::info('KPay webhook', $data);
+
+        $kpayId     = $data['id'] ?? null;
+        $status     = strtoupper($data['status'] ?? '');
         $externalId = $data['externalId'] ?? null;
         $amount     = (float) ($data['amount'] ?? 0);
 
-        if (!$reference || !$status || !$externalId) {
+        if (!$kpayId || !$status || !$externalId) {
             return response()->json(['ok' => false, 'message' => 'Payload incomplet'], 400);
         }
 
-        // Confirmer le statut côté Freemopay (anti-spoofing)
-        try {
-            $confirmed = $this->freemopay->getStatut($reference);
-            $status    = $confirmed['status'] ?? $status;
-        } catch (\Throwable $e) {
-            Log::warning('Freemopay webhook: impossible de confirmer', ['error' => $e->getMessage()]);
-        }
+        // Normaliser
+        $normalizedStatus = match ($status) {
+            'COMPLETED' => 'SUCCESS',
+            'FAILED', 'CANCELLED', 'EXPIRED' => 'FAILED',
+            default => $status,
+        };
 
         if (str_starts_with($externalId, 'panier_')) {
-            $this->traiterPanier($externalId, $status, $reference);
+            $this->traiterPanier($externalId, $normalizedStatus, $kpayId);
         } elseif (str_starts_with($externalId, 'tranche_')) {
-            $this->traiterTranche($externalId, $status, $reference, $amount);
+            $this->traiterTranche($externalId, $normalizedStatus, $kpayId, $amount);
         }
 
         return response()->json(['ok' => true]);
     }
 
     // =========================================================
-    // MÉTHODES PRIVÉES
+    // METHODES PRIVEES
     // =========================================================
 
-    private function traiterPanier(string $externalId, string $status, string $reference): void
+    private function traiterPanier(string $externalId, string $status, string $kpayId): void
     {
         preg_match('/^panier_(\d+)/', $externalId, $m);
         $idPanier = $m[1] ?? null;
@@ -160,17 +191,17 @@ class FreemopayController extends Controller
         if (!$panier) return;
 
         if ($status === 'SUCCESS') {
-            $panier->update(['freemopay_statut' => 'success']);
-            Log::info('Freemopay: panier marqué success', ['id_panier' => $idPanier]);
+            $panier->update(['kpay_statut' => 'success']);
+            Log::info('KPay: panier marque success', ['id_panier' => $idPanier]);
         } elseif ($status === 'FAILED') {
             $panier->update([
-                'freemopay_statut'        => 'failed',
-                'derniere_erreur_paiement' => 'Paiement Mobile Money échoué ou annulé',
+                'kpay_statut'              => 'failed',
+                'derniere_erreur_paiement' => 'Paiement Mobile Money echoue ou annule',
             ]);
         }
     }
 
-    private function traiterTranche(string $externalId, string $status, string $reference, float $montant): void
+    private function traiterTranche(string $externalId, string $status, string $kpayId, float $montant): void
     {
         preg_match('/^tranche_(\d+)/', $externalId, $m);
         $idTranche = $m[1] ?? null;
@@ -180,12 +211,12 @@ class FreemopayController extends Controller
         if (!$tranche || $tranche->statut === 'payee') return;
 
         if ($status === 'SUCCESS') {
-            DB::transaction(function () use ($tranche, $reference, $montant) {
+            DB::transaction(function () use ($tranche, $kpayId, $montant) {
                 $tranche->update([
                     'montant_paye'           => $montant ?: $tranche->montant_du_ttc,
                     'date_paiement_effectif' => now()->toDateString(),
                     'mode_paiement'          => 'mobile_money',
-                    'reference_transaction'  => $reference,
+                    'reference_transaction'  => $kpayId,
                     'statut'                 => 'payee',
                 ]);
 
@@ -198,7 +229,7 @@ class FreemopayController extends Controller
                 }
             });
 
-            // Fallback PHP : débloquer la livraison si solde atteint
+            // Fallback PHP : debloquer la livraison si solde atteint
             $plan = PlanPaiement::with('commande')->find($tranche->id_plan_paiement);
             if ($plan && $plan->commande) {
                 $totalPaye = TranchePaiement::where('id_plan_paiement', $plan->id_plan_paiement)
@@ -209,16 +240,7 @@ class FreemopayController extends Controller
                 }
             }
 
-            Log::info('Freemopay: tranche payée via webhook', ['id_tranche' => $tranche->id_tranche]);
+            Log::info('KPay: tranche payee via webhook', ['id_tranche' => $tranche->id_tranche]);
         }
-    }
-
-    private function normaliserPhone(string $phone): string
-    {
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        if (!str_starts_with($phone, '237')) {
-            $phone = '237' . $phone;
-        }
-        return $phone;
     }
 }

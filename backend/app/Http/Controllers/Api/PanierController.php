@@ -16,7 +16,7 @@ use App\Models\ServiceConception;
 use App\Models\ServiceImpression;
 use App\Models\ServiceSocialMedia;
 use App\Models\TranchePaiement;
-use App\Services\FreemopayService;
+use App\Services\KPayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -130,26 +130,27 @@ class PanierController extends Controller
             ], 410);
         }
 
-        // Validation Mobile Money : vérifier via Freemopay API ou statut DB
+        // Validation Mobile Money : vérifier via KPay API ou statut DB
         if ($validated['mode_paiement'] === 'mobile_money') {
             $reference = $validated['reference_transaction'] ?? null;
             if ($reference) {
                 try {
-                    $freemopay = app(FreemopayService::class);
-                    $statut = $freemopay->getStatut($reference);
-                    if (($statut['status'] ?? '') !== 'SUCCESS') {
+                    $kpay = app(KPayService::class);
+                    $statut = $kpay->getPaymentStatus($reference);
+                    $kpayStatus = strtoupper($statut['status'] ?? '');
+                    if ($kpayStatus !== 'COMPLETED' && $kpayStatus !== 'SUCCESS') {
                         return response()->json([
                             'message' => 'Le paiement Mobile Money n\'a pas encore été confirmé par l\'opérateur',
                         ], 422);
                     }
                     // Mettre à jour le statut en DB si le webhook n'a pas encore tourné
-                    if ($panier->freemopay_statut !== 'success') {
-                        $panier->update(['freemopay_statut' => 'success']);
+                    if ($panier->kpay_statut !== 'success') {
+                        $panier->update(['kpay_statut' => 'success']);
                     }
                 } catch (\Throwable $e) {
-                    Log::warning('PanierController: vérification Freemopay échouée', ['error' => $e->getMessage()]);
+                    Log::warning('PanierController: vérification KPay échouée', ['error' => $e->getMessage()]);
                     // Fallback : vérifier le statut mis à jour par le webhook
-                    if ($panier->freemopay_statut !== 'success') {
+                    if ($panier->kpay_statut !== 'success') {
                         return response()->json([
                             'message' => 'Impossible de vérifier le paiement Mobile Money. Réessayez dans quelques instants.',
                         ], 503);

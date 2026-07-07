@@ -114,7 +114,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
     if (pollingRef.current) clearInterval(pollingRef.current)
     pollingRef.current = setInterval(async () => {
       try {
-        const res = await api.get(`/freemopay/statut/${ref}`)
+        const res = await api.get(`/kpay/statut/${ref}`)
         const status = res.data.status
         if (status === 'SUCCESS') {
           clearInterval(pollingRef.current!)
@@ -135,15 +135,16 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
     if (!operator || !validation.valid) return
     setStep('sending')
     try {
-      const res = await api.post('/freemopay/initier-tranche', {
+      const res = await api.post('/kpay/initier-tranche', {
         id_tranche: tranche.id_tranche,
         phone: phoneClean,
+        operateur: operator === 'mtn' ? 'MTN' : 'Orange',
       })
-      const ref = res.data.reference
-      setReference(ref)
+      const kpayId = res.data.kpay_id
+      setReference(kpayId)
       setStep('awaiting_validation')
       setCountdown(180)
-      startPolling(ref)
+      startPolling(kpayId)
     } catch (e: any) {
       console.error('Erreur initiation paiement:', e.response?.data)
       setErrorMsg(e.response?.data?.message || 'Erreur lors de l\'envoi de la demande de paiement')
@@ -157,7 +158,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess, tranche, numeroComman
     if (!reference) return
     setStep('sending')
     try {
-      const res = await api.get(`/freemopay/statut/${reference}`)
+      const res = await api.get(`/kpay/statut/${reference}`)
       if (res.data.status === 'SUCCESS') {
         setStep('success')
         onSuccess()

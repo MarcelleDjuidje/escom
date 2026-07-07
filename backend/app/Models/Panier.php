@@ -27,8 +27,8 @@ class Panier extends Model
         'derniere_tentative_at',
         'derniere_erreur_paiement',
         'id_devis_origine',
-        'freemopay_reference',
-        'freemopay_statut',
+        'kpay_id',
+        'kpay_statut',
     ];
 
     protected $casts = [
