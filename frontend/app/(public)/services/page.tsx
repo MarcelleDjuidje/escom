@@ -174,20 +174,22 @@ export default function ServicesPage() {
                 >
                   <h3 className="text-lg font-bold mb-2">{s.libelle || s.titre}</h3>
                   <p className="text-sm text-escom-neutral-600 mb-4 line-clamp-3 flex-1">{s.description}</p>
-                  {s.delai_realisation_jours && (
+                  {s.duree_livraison_jours && (
                     <p className="text-xs text-escom-neutral-500 mb-3 flex items-center gap-1">
-                      <Clock size={12} /> Délai : {s.delai_realisation_jours} jours
+                      <Clock size={12} /> Délai : {s.duree_livraison_jours} jours
                     </p>
                   )}
                   <div className="flex items-center justify-between pt-4 border-t">
-                    <div>
-                      <span className="text-xs text-escom-neutral-500 block">À partir de</span>
-                      <span className="text-xl font-bold text-escom-blue-700">
-                        {formatXAF(s[active.priceKey])}
-                      </span>
-                    </div>
+                    {active.id !== 'campagnes' && (
+                      <div>
+                        <span className="text-xs text-escom-neutral-500 block">À partir de</span>
+                        <span className="text-xl font-bold text-escom-blue-700">
+                          {formatXAF(s[active.priceKey])}
+                        </span>
+                      </div>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); handleOrder(s) }}
-                      className="btn-primary !py-2 !px-3 text-sm">
+                      className={`btn-primary !py-2 !px-3 text-sm ${active.id === 'campagnes' ? 'w-full justify-center' : ''}`}>
                       {active.id === 'campagnes'
                         ? <><Target size={14} /> Demander un devis</>
                         : <><ShoppingCart size={14} /> Commander</>
@@ -236,20 +238,22 @@ export default function ServicesPage() {
                 )}
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                  {selected.delai_realisation_jours && (
+                  {selected.duree_livraison_jours && (
                     <div className="bg-escom-neutral-50 p-3 rounded-lg">
                       <p className="text-xs text-escom-neutral-500 uppercase">Délai</p>
                       <p className="text-lg font-bold text-escom-blue-700 flex items-center gap-1">
-                        <Clock size={16} /> {selected.delai_realisation_jours} j
+                        <Clock size={16} /> {selected.duree_livraison_jours} j
                       </p>
                     </div>
                   )}
-                  <div className="bg-escom-gold-50 p-3 rounded-lg">
-                    <p className="text-xs text-escom-gold-700 uppercase">À partir de</p>
-                    <p className="text-lg font-bold text-escom-gold-700">
-                      {formatXAF(selected[active.priceKey])}
-                    </p>
-                  </div>
+                  {active.id !== 'campagnes' && (
+                    <div className="bg-escom-gold-50 p-3 rounded-lg">
+                      <p className="text-xs text-escom-gold-700 uppercase">À partir de</p>
+                      <p className="text-lg font-bold text-escom-gold-700">
+                        {formatXAF(selected[active.priceKey])}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {!user && (

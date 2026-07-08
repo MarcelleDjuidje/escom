@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Loader2, ShoppingCart, ArrowLeft, Plus, Minus, Calendar, MapPin, CreditCard } from 'lucide-react'
+import { Loader2, ShoppingCart, ArrowLeft, Plus, Minus, Calendar, MapPin, CreditCard, Zap, Clock } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { PaiementForceModal } from '@/components/dashboard/paiement-force-modal'
 import { api } from '@/lib/api'
@@ -37,6 +37,7 @@ function NouvelleCommandeContent() {
   const [nbTranches, setNbTranches] = useState(2)
   const [pourcentageAvance, setPourcentageAvance] = useState(30)
   const [showPaiementModal, setShowPaiementModal] = useState(false)
+  const [express, setExpress] = useState(false)
 
   const config = TYPE_ENDPOINTS[typeParam] || TYPE_ENDPOINTS.conception
 
@@ -78,10 +79,17 @@ function NouvelleCommandeContent() {
     } catch {}
   }, [services])
 
+  // Délai de livraison standard du service (en jours)
+  const delaiStandard = service?.duree_livraison_jours || 0
+  const delaiExpress = delaiStandard ? Math.max(1, Math.ceil(delaiStandard / 2)) : 0
+  const delaiAffiche = express && delaiStandard ? delaiExpress : delaiStandard
+
   // Pour les campagnes sur devis, le prix est celui du devis accepté
-  const prixUnitaire = (typeParam === 'campagnes' && prixDevis)
+  const prixUnitaireBase = (typeParam === 'campagnes' && prixDevis)
     ? Number(prixDevis)
     : (service ? Number(service[config.priceKey] || 0) : 0)
+  const surchargeExpress = express && delaiStandard ? Math.round(prixUnitaireBase * 0.5) : 0
+  const prixUnitaire = prixUnitaireBase + surchargeExpress
   const totalHT = prixUnitaire * quantite
   const totalTTC = totalHT
 
@@ -127,9 +135,10 @@ function NouvelleCommandeContent() {
       lignes: [{
         type_service: config.typeBackend,
         id_service: service[config.idKey],
-        designation: service.libelle,
+        designation: express && delaiStandard ? `${service.libelle} (Express)` : service.libelle,
         quantite,
         prix_unitaire_ht: prixUnitaire,
+        ...(express && delaiStandard ? { express: true, delai_jours: delaiExpress } : delaiStandard ? { delai_jours: delaiStandard } : {}),
       }],
       total_ttc: totalTTC,
       paiement_en_tranches: planPaiement === 'tranches',
@@ -229,8 +238,34 @@ function NouvelleCommandeContent() {
                 <div className="mt-4 p-4 bg-escom-blue-50 rounded-lg">
                   <p className="font-semibold">{service.libelle}</p>
                   {service.description && <p className="text-sm text-escom-neutral-700 mt-1">{service.description}</p>}
-                  {service.delai_realisation_jours && (
-                    <p className="text-xs text-escom-neutral-600 mt-2">⏱ Délai : {service.delai_realisation_jours} jours</p>
+                  {delaiStandard > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-escom-neutral-600 flex items-center gap-1">
+                        <Clock size={12} /> Délai standard : {delaiStandard} jours
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setExpress(!express)}
+                        className={`w-full p-3 rounded-lg border-2 text-left transition flex items-start gap-3 ${
+                          express
+                            ? 'border-amber-500 bg-amber-50'
+                            : 'border-escom-neutral-200 hover:border-amber-300'
+                        }`}
+                      >
+                        <Zap size={18} className={express ? 'text-amber-600' : 'text-escom-neutral-400'} />
+                        <div className="flex-1">
+                          <p className={`font-semibold text-sm ${express ? 'text-amber-700' : 'text-escom-neutral-700'}`}>
+                            Livraison Express
+                          </p>
+                          <p className="text-xs text-escom-neutral-500 mt-0.5">
+                            Délai réduit à <strong>{delaiExpress} jours</strong> (+50% sur le prix)
+                          </p>
+                        </div>
+                        <div className={`w-10 h-6 rounded-full relative transition ${express ? 'bg-amber-500' : 'bg-escom-neutral-300'}`}>
+                          <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${express ? 'left-[18px]' : 'left-0.5'}`} />
+                        </div>
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -395,12 +430,24 @@ function NouvelleCommandeContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-escom-neutral-600">Prix unitaire :</span>
-                      <span>{formatXAF(prixUnitaire)}</span>
+                      <span>{formatXAF(prixUnitaireBase)}</span>
                     </div>
+                    {express && surchargeExpress > 0 && (
+                      <div className="flex justify-between text-amber-600">
+                        <span className="flex items-center gap-1"><Zap size={12} /> Express (+50%) :</span>
+                        <span>+{formatXAF(surchargeExpress)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-escom-neutral-600">Quantité :</span>
                       <span>{quantite}</span>
                     </div>
+                    {delaiAffiche > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-escom-neutral-600">Délai :</span>
+                        <span className={express ? 'text-amber-600 font-semibold' : ''}>{delaiAffiche} jours{express ? ' (Express)' : ''}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="border-t mt-3 pt-3 flex justify-between items-center">

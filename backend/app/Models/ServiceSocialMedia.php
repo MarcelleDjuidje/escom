@@ -15,7 +15,7 @@ class ServiceSocialMedia extends Model
 
     protected $fillable = [
         'id_categorie', 'plateforme', 'type_prestation', 'libelle', 'description', 'image',
-        'frequence', 'nb_publications_incluses', 'budget_pub_inclus_ht', 'prix_ht', 'actif',
+        'frequence', 'nb_publications_incluses', 'budget_pub_inclus_ht', 'prix_ht', 'duree_livraison_jours', 'actif',
         'id_employe_responsable',
     ];
 

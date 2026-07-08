@@ -4,99 +4,207 @@
     <meta charset="UTF-8">
     <title>Facture {{ $facture->numero_facture }}</title>
     <style>
-        @page { margin: 30px 35px; }
-        body { font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 11px; line-height: 1.5; }
-        .header { display: table; width: 100%; border-bottom: 3px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 20px; }
-        .header-left, .header-right { display: table-cell; vertical-align: top; }
-        .header-right { text-align: right; }
-        .logo { max-height: 50px; }
-        .agency-name { font-size: 22px; font-weight: bold; color: #1d4ed8; margin: 0; }
-        .agency-tagline { color: #d4af37; font-style: italic; font-size: 10px; }
-        .agency-info { color: #6b7280; font-size: 9px; margin-top: 5px; }
-        .facture-title { font-size: 26px; font-weight: bold; color: #1d4ed8; margin: 0; letter-spacing: 1px; }
-        .facture-numero { font-size: 13px; color: #6b7280; margin-top: 4px; }
-        .facture-date { font-size: 9px; color: #9ca3af; margin-top: 3px; }
-        .info-grid { display: table; width: 100%; margin: 20px 0; }
-        .info-cell { display: table-cell; width: 50%; vertical-align: top; }
-        .info-box { background: #f3f4f6; padding: 12px; border-radius: 6px; }
-        .info-box-right { background: #fef3c7; padding: 12px; border-radius: 6px; border-left: 3px solid #d4af37; }
-        .info-label { font-size: 9px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
-        .info-value { font-weight: bold; font-size: 12px; }
-        .type-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
-        .type-acompte { background: #dbeafe; color: #1e40af; }
-        .type-intermediaire { background: #fef3c7; color: #92400e; }
-        .type-solde { background: #dcfce7; color: #166534; }
-        table.detail { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        table.detail th { background: #1d4ed8; color: white; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
-        table.detail td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; }
+        @page { margin: 25px 30px 40px 30px; }
+        body { font-family: 'DejaVu Sans', sans-serif; color: #1a1a2e; font-size: 10px; line-height: 1.5; margin: 0; }
+
+        /* Header band */
+        .header-band {
+            background: #0f1b4c;
+            color: white;
+            padding: 20px 25px;
+            margin: -25px -30px 0 -30px;
+        }
+        .header-table { width: 100%; }
+        .header-table td { vertical-align: top; }
+        .logo-cell { width: 55%; }
+        .facture-cell { width: 45%; text-align: right; }
+        .logo { max-height: 40px; margin-bottom: 6px; }
+        .company-name { font-size: 20px; font-weight: bold; letter-spacing: 1px; margin: 0; }
+        .company-tagline { font-size: 9px; color: #d4af37; font-style: italic; margin: 2px 0 0 0; }
+        .facture-label { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #d4af37; margin: 0; }
+        .facture-num { font-size: 16px; font-weight: bold; margin: 4px 0 0 0; }
+        .facture-date { font-size: 9px; color: #a0a8c4; margin-top: 4px; }
+
+        /* Type badge */
+        .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+        .badge-acompte { background: #2563eb; color: white; }
+        .badge-intermediaire { background: #d97706; color: white; }
+        .badge-solde { background: #059669; color: white; }
+        .badge-avoir { background: #dc2626; color: white; }
+
+        /* Info blocks */
+        .info-row { display: table; width: 100%; margin: 20px 0; }
+        .info-col { display: table-cell; width: 50%; vertical-align: top; }
+        .info-block { padding: 14px 16px; border-radius: 8px; }
+        .info-block-left { background: #f8f9fb; border-left: 3px solid #0f1b4c; margin-right: 10px; }
+        .info-block-right { background: #fffbeb; border-left: 3px solid #d4af37; margin-left: 10px; }
+        .info-title { font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; color: #6b7280; margin: 0 0 6px 0; }
+        .info-name { font-size: 13px; font-weight: bold; color: #0f1b4c; margin: 0; }
+        .info-detail { font-size: 9px; color: #6b7280; margin: 2px 0 0 0; }
+
+        /* Detail table */
+        .detail-table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        .detail-table thead th {
+            background: #0f1b4c;
+            color: white;
+            padding: 10px 12px;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: left;
+        }
+        .detail-table thead th:first-child { border-radius: 6px 0 0 0; }
+        .detail-table thead th:last-child { border-radius: 0 6px 0 0; text-align: right; }
+        .detail-table tbody td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f1f3;
+            font-size: 10px;
+        }
+        .detail-table tbody tr:last-child td { border-bottom: none; }
+        .detail-table .designation { font-weight: 600; color: #0f1b4c; }
+        .detail-table .subdesc { font-size: 8px; color: #9ca3af; margin-top: 2px; }
         .text-right { text-align: right; }
-        .totals { margin-top: 20px; width: 50%; margin-left: auto; }
-        .totals table { width: 100%; }
-        .totals td { padding: 6px 10px; }
-        .totals .total-final td { background: #1d4ed8; color: white; font-size: 14px; font-weight: bold; padding: 12px 10px; }
-        .stamp { position: absolute; top: 280px; right: 100px; transform: rotate(-25deg); border: 4px solid #16a34a; color: #16a34a; padding: 8px 25px; font-size: 22px; font-weight: bold; opacity: 0.7; letter-spacing: 2px; }
-        .stamp-due { border-color: #dc2626; color: #dc2626; }
-        .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 9px; }
-        .progress-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin: 15px 0; }
-        .progress-title { font-size: 10px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+        .text-center { text-align: center; }
+
+        /* Totals */
+        .totals-wrapper { margin-top: 20px; display: table; width: 100%; }
+        .totals-spacer { display: table-cell; width: 55%; }
+        .totals-box { display: table-cell; width: 45%; }
+        .totals-table { width: 100%; border-collapse: collapse; }
+        .totals-table td { padding: 6px 12px; font-size: 10px; }
+        .totals-table .subtotal td { color: #6b7280; }
+        .totals-table .tva td { color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+        .totals-table .grand-total td {
+            background: #0f1b4c;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 10px 12px;
+        }
+        .totals-table .grand-total td:first-child { border-radius: 0 0 0 6px; }
+        .totals-table .grand-total td:last-child { border-radius: 0 0 6px 0; }
+
+        /* Stamps */
+        .stamp {
+            position: absolute;
+            top: 320px;
+            right: 80px;
+            transform: rotate(-20deg);
+            border: 3px solid;
+            padding: 6px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            opacity: 0.6;
+            letter-spacing: 3px;
+            border-radius: 8px;
+        }
+        .stamp-payee { border-color: #059669; color: #059669; }
+        .stamp-retard { border-color: #dc2626; color: #dc2626; }
+
+        /* Payment info */
+        .payment-box {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 9px;
+        }
+        .payment-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .payment-pending { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+
+        /* Tranche info */
+        .tranche-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #f8f9fb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .tranche-title { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; color: #6b7280; margin: 0 0 4px 0; }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 2px solid #0f1b4c;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 8px;
+        }
+        .footer-company { font-weight: bold; color: #0f1b4c; font-size: 9px; }
+        .footer-gold { color: #d4af37; }
     </style>
 </head>
 <body>
 
-    <!-- HEADER -->
-    <div class="header">
-        <div class="header-left">
-            @if($logoData)
-                <img src="data:image/png;base64,{{ $logoData }}" class="logo" alt="Logo">
-            @endif
-            <p class="agency-name">{{ $agence['nom'] }}</p>
-            <p class="agency-tagline">{{ $agence['tagline'] }}</p>
-            <p class="agency-info">
-                {{ $agence['adresse'] }}<br>
-                {{ $agence['email'] }} — {{ $agence['telephone'] }}
-            </p>
-        </div>
-        <div class="header-right">
-            <p class="facture-title">FACTURE</p>
-            <p class="facture-numero">{{ $facture->numero_facture }}</p>
-            <p class="facture-date">Émise le {{ \Carbon\Carbon::parse($facture->date_emission)->format('d/m/Y') }}</p>
-            <div style="margin-top: 8px;">
-                <span class="type-badge type-{{ $facture->type_facture ?? 'solde' }}">
-                    {{ strtoupper($facture->type_facture ?? 'solde') }}
-                </span>
-            </div>
-        </div>
+    {{-- HEADER BAND --}}
+    <div class="header-band">
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    @if($logoData)
+                        <img src="data:image/png;base64,{{ $logoData }}" class="logo" alt="Logo">
+                    @endif
+                    <p class="company-name">{{ $agence['nom'] }}</p>
+                    <p class="company-tagline">{{ $agence['tagline'] }}</p>
+                </td>
+                <td class="facture-cell">
+                    <p class="facture-label">Facture</p>
+                    <p class="facture-num">{{ $facture->numero_facture }}</p>
+                    <p class="facture-date">
+                        Emise le {{ \Carbon\Carbon::parse($facture->date_emission)->format('d/m/Y') }}
+                    </p>
+                    @php
+                        $typeBadge = match($facture->type_facture ?? 'solde') {
+                            'acompte' => 'badge-acompte',
+                            'intermediaire' => 'badge-intermediaire',
+                            'avoir' => 'badge-avoir',
+                            default => 'badge-solde',
+                        };
+                    @endphp
+                    <span class="badge {{ $typeBadge }}">
+                        {{ strtoupper($facture->type_facture ?? 'solde') }}
+                    </span>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <!-- INFO CLIENT + COMMANDE -->
-    <div class="info-grid">
-        <div class="info-cell" style="padding-right: 8px;">
-            <div class="info-box">
-                <p class="info-label">FACTURÉ À</p>
-                <p class="info-value">{{ $facture->client->nom_complet ?? 'Client' }}</p>
+    {{-- STAMPS --}}
+    @if($facture->statut_paiement === 'payee')
+        <div class="stamp stamp-payee">PAYEE</div>
+    @elseif($facture->statut_paiement === 'en_retard')
+        <div class="stamp stamp-retard">EN RETARD</div>
+    @endif
+
+    {{-- CLIENT & COMMANDE INFO --}}
+    <div class="info-row">
+        <div class="info-col">
+            <div class="info-block info-block-left">
+                <p class="info-title">Facture a</p>
+                <p class="info-name">{{ $facture->client->nom_complet ?? $facture->client->raison_sociale ?? 'Client' }}</p>
                 @if($facture->client && $facture->client->email)
-                    <p style="font-size: 10px; color: #6b7280;">{{ $facture->client->email }}</p>
+                    <p class="info-detail">{{ $facture->client->email }}</p>
                 @endif
                 @if($facture->client && $facture->client->telephone)
-                    <p style="font-size: 10px; color: #6b7280;">{{ $facture->client->telephone }}</p>
+                    <p class="info-detail">{{ $facture->client->telephone }}</p>
                 @endif
                 @if($facture->client && $facture->client->adresse)
-                    <p style="font-size: 10px; color: #6b7280;">{{ $facture->client->adresse }}</p>
+                    <p class="info-detail">{{ $facture->client->adresse }}</p>
                 @endif
             </div>
         </div>
-        <div class="info-cell" style="padding-left: 8px;">
-            <div class="info-box-right">
-                <p class="info-label">COMMANDE</p>
-                <p class="info-value">{{ $facture->commande->numero_commande ?? '—' }}</p>
-                <p style="font-size: 10px; color: #6b7280;">
-                    Échéance : {{ \Carbon\Carbon::parse($facture->date_echeance)->format('d/m/Y') }}
+        <div class="info-col">
+            <div class="info-block info-block-right">
+                <p class="info-title">Commande</p>
+                <p class="info-name">{{ $facture->commande->numero_commande ?? '---' }}</p>
+                <p class="info-detail">
+                    Echeance : {{ \Carbon\Carbon::parse($facture->date_echeance)->format('d/m/Y') }}
                 </p>
                 @if($facture->tranche)
-                    <p style="font-size: 10px; color: #6b7280;">
+                    <p class="info-detail">
                         Tranche {{ $facture->tranche->numero_tranche }}
                         @if($facture->tranche->plan)
-                            / {{ $facture->tranche->plan->nombre_tranches }}
+                            sur {{ $facture->tranche->plan->nombre_tranches }}
                         @endif
                     </p>
                 @endif
@@ -104,96 +212,96 @@
         </div>
     </div>
 
-    <!-- CACHET PAYÉE -->
-    @if($facture->statut_paiement === 'payee')
-        <div class="stamp">PAYÉE</div>
-    @elseif($facture->statut_paiement === 'en_retard')
-        <div class="stamp stamp-due">EN RETARD</div>
-    @endif
-
-    <!-- DÉTAIL DE LA PRESTATION -->
-    <table class="detail">
+    {{-- DETAIL TABLE --}}
+    <table class="detail-table">
         <thead>
             <tr>
-                <th style="width: 60%;">Désignation</th>
-                <th class="text-right" style="width: 15%;">Quantité</th>
-                <th class="text-right" style="width: 25%;">Montant HT</th>
+                <th style="width: 55%;">Designation</th>
+                <th class="text-center" style="width: 15%;">Qte</th>
+                <th class="text-right" style="width: 30%;">Montant HT</th>
             </tr>
         </thead>
         <tbody>
             @if($facture->commande && $facture->commande->devis && $facture->commande->devis->lignes && count($facture->commande->devis->lignes) > 0)
-                {{-- Si la commande a un devis avec des lignes, on les affiche --}}
                 @foreach($facture->commande->devis->lignes as $ligne)
                     <tr>
                         <td>
-                            <strong>{{ $ligne->designation ?? $ligne->libelle ?? 'Prestation' }}</strong>
+                            <div class="designation">{{ $ligne->designation ?? $ligne->libelle ?? 'Prestation' }}</div>
                             @if(!empty($ligne->description))
-                                <br><span style="color: #6b7280; font-size: 9px;">{{ $ligne->description }}</span>
+                                <div class="subdesc">{{ $ligne->description }}</div>
                             @endif
                         </td>
-                        <td class="text-right">{{ $ligne->quantite ?? 1 }}</td>
-                        <td class="text-right">{{ number_format($ligne->montant_ht ?? ($ligne->quantite ?? 1) * ($ligne->prix_unitaire_ht ?? 0), 0, ',', ' ') }} XAF</td>
+                        <td class="text-center">{{ $ligne->quantite ?? 1 }}</td>
+                        <td class="text-right" style="font-weight: 600;">
+                            {{ number_format($ligne->montant_ht ?? ($ligne->quantite ?? 1) * ($ligne->prix_unitaire_ht ?? 0), 0, ',', ' ') }} XAF
+                        </td>
                     </tr>
                 @endforeach
             @else
-                {{-- Sinon, on affiche la désignation de la facture --}}
                 <tr>
                     <td>
-                        <strong>{{ $facture->designation_prestation }}</strong>
+                        <div class="designation">{{ $facture->designation_prestation }}</div>
                     </td>
-                    <td class="text-right">1</td>
-                    <td class="text-right">{{ number_format($facture->montant_ht, 0, ',', ' ') }} XAF</td>
+                    <td class="text-center">1</td>
+                    <td class="text-right" style="font-weight: 600;">
+                        {{ number_format($facture->montant_ht, 0, ',', ' ') }} XAF
+                    </td>
                 </tr>
             @endif
         </tbody>
     </table>
 
-    <!-- TOTAUX -->
-    <div class="totals">
-        <table>
-            <tr>
-                <td>Sous-total HT :</td>
-                <td class="text-right"><strong>{{ number_format($facture->montant_ht, 0, ',', ' ') }} XAF</strong></td>
-            </tr>
-            @if($facture->taux_tva && $facture->taux_tva > 0)
-                <tr>
-                    <td>TVA ({{ $facture->taux_tva }}%) :</td>
-                    <td class="text-right">{{ number_format($facture->montant_tva, 0, ',', ' ') }} XAF</td>
+    {{-- TOTALS --}}
+    <div class="totals-wrapper">
+        <div class="totals-spacer"></div>
+        <div class="totals-box">
+            <table class="totals-table">
+                <tr class="subtotal">
+                    <td>Sous-total HT</td>
+                    <td class="text-right"><strong>{{ number_format($facture->montant_ht, 0, ',', ' ') }} XAF</strong></td>
                 </tr>
-            @endif
-            <tr class="total-final">
-                <td>TOTAL TTC :</td>
-                <td class="text-right">{{ number_format($facture->montant_ttc, 0, ',', ' ') }} XAF</td>
-            </tr>
-        </table>
+                @if($facture->taux_tva && $facture->taux_tva > 0)
+                    <tr class="tva">
+                        <td>TVA ({{ $facture->taux_tva }}%)</td>
+                        <td class="text-right">{{ number_format($facture->montant_tva, 0, ',', ' ') }} XAF</td>
+                    </tr>
+                @endif
+                <tr class="grand-total">
+                    <td>TOTAL TTC</td>
+                    <td class="text-right">{{ number_format($facture->montant_ttc, 0, ',', ' ') }} XAF</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
-    <!-- INFOS PAIEMENT SI PAYÉE -->
+    {{-- PAYMENT STATUS --}}
     @if($facture->statut_paiement === 'payee' && $facture->date_paiement_effectif)
-        <div class="progress-box" style="background: #f0fdf4; border-color: #86efac;">
-            <p class="progress-title" style="color: #166534;">✓ PAIEMENT REÇU</p>
-            <p style="font-size: 10px;">
-                Payée le <strong>{{ \Carbon\Carbon::parse($facture->date_paiement_effectif)->format('d/m/Y') }}</strong>
-            </p>
+        <div class="payment-box payment-success">
+            <strong>Paiement recu</strong> le {{ \Carbon\Carbon::parse($facture->date_paiement_effectif)->format('d/m/Y') }}
+        </div>
+    @elseif($facture->statut_paiement === 'non_payee')
+        <div class="payment-box payment-pending">
+            <strong>En attente de paiement</strong> — Echeance le {{ \Carbon\Carbon::parse($facture->date_echeance)->format('d/m/Y') }}
         </div>
     @endif
 
-    <!-- INFOS RAPPEL COMMANDE -->
+    {{-- RAPPEL TOTAL COMMANDE --}}
     @if($facture->rappel_total_commande)
-        <div class="progress-box">
-            <p class="progress-title">Rappel total commande</p>
-            <p style="font-size: 11px;">
-                Montant total de la commande : <strong>{{ number_format($facture->rappel_total_commande, 0, ',', ' ') }} XAF</strong>
+        <div class="tranche-box">
+            <p class="tranche-title">Rappel total commande</p>
+            <p style="font-size: 10px;">
+                Montant total : <strong>{{ number_format($facture->rappel_total_commande, 0, ',', ' ') }} XAF</strong>
             </p>
         </div>
     @endif
 
-    <!-- FOOTER -->
+    {{-- FOOTER --}}
     <div class="footer">
-        <p>
-            <strong>{{ $agence['nom'] }}</strong> — {{ $agence['adresse'] }}<br>
-            {{ $agence['email'] }} | {{ $agence['telephone'] }}<br>
-            <span style="margin-top: 6px; display: inline-block;">Facture générée automatiquement le {{ now()->format('d/m/Y à H:i') }}</span>
+        <p class="footer-company">{{ $agence['nom'] }} <span class="footer-gold">|</span> {{ $agence['tagline'] }}</p>
+        <p>{{ $agence['adresse'] }}</p>
+        <p>{{ $agence['email'] }} | {{ $agence['telephone'] }}</p>
+        <p style="margin-top: 6px; color: #c4c8d4;">
+            Document genere le {{ now()->format('d/m/Y a H:i') }}
         </p>
     </div>
 

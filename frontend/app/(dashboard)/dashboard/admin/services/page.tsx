@@ -79,7 +79,7 @@ export default function AdminServices() {
       libelle: '',
       description: '',
       [activeTab.priceKey]: '',
-      delai_realisation_jours: '',
+      duree_livraison_jours: '',
       est_actif: true,
       id_categorie: 1,
       id_employe_responsable: '',
@@ -99,7 +99,7 @@ export default function AdminServices() {
       const payload: any = {
         ...form,
         [activeTab.priceKey]: Number(form[activeTab.priceKey]) || 0,
-        delai_realisation_jours: Number(form.delai_realisation_jours) || 1,
+        duree_livraison_jours: Number(form.duree_livraison_jours) || 1,
         id_categorie: Number(form.id_categorie) || 1,
         id_employe_responsable: form.id_employe_responsable ? Number(form.id_employe_responsable) : null,
       }
@@ -218,8 +218,8 @@ export default function AdminServices() {
 
           <div>
             <label className="text-xs font-semibold block mb-1">Délai (jours) *</label>
-            <input type="number" value={form.delai_realisation_jours || ''}
-              onChange={e => setForm({...form, delai_realisation_jours: e.target.value})}
+            <input type="number" value={form.duree_livraison_jours || ''}
+              onChange={e => setForm({...form, duree_livraison_jours: e.target.value})}
               className="input-escom" />
           </div>
 
@@ -291,8 +291,8 @@ export default function AdminServices() {
                 <span className="text-xs text-escom-neutral-500">À partir de</span>
                 <span className="text-lg font-bold text-escom-blue-700">{formatXAF(s[activeTab.priceKey])}</span>
               </div>
-              {s.delai_realisation_jours && (
-                <p className="text-xs text-escom-neutral-500 mt-2">⏱ {s.delai_realisation_jours} jours</p>
+              {s.duree_livraison_jours && (
+                <p className="text-xs text-escom-neutral-500 mt-2">⏱ {s.duree_livraison_jours} jours</p>
               )}
               <div className="mt-3 flex justify-between items-center">
                 <span className={`text-xs px-2 py-0.5 rounded ${s.est_actif !== false && s.actif !== 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

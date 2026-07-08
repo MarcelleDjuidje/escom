@@ -88,6 +88,7 @@ class ServiceController extends Controller
             'quantite_min' => 'nullable|integer',
             'prix_unitaire_ht' => 'required|numeric|min:0',
             'frais_calage_ht' => 'nullable|numeric|min:0',
+            'duree_livraison_jours' => 'nullable|integer|min:1',
             'image' => 'nullable|string',
             'id_employe_responsable' => 'nullable|exists:employes,id_employe',
         ]);
@@ -108,6 +109,7 @@ class ServiceController extends Controller
             'nb_publications_incluses' => 'nullable|integer',
             'budget_pub_inclus_ht' => 'nullable|numeric|min:0',
             'prix_ht' => 'required|numeric|min:0',
+            'duree_livraison_jours' => 'nullable|integer|min:1',
             'image' => 'nullable|string',
             'id_employe_responsable' => 'nullable|exists:employes,id_employe',
         ]);

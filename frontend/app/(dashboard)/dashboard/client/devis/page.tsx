@@ -1,214 +1,170 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Loader2, FileText, Clock, CheckCircle2, XCircle, Ban, Eye } from 'lucide-react'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
+import { StatusBadge } from '@/components/dashboard/status-badge'
 import { api } from '@/lib/api'
+import { formatDate, formatXAF } from '@/lib/utils'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { TYPE_SERVICE_OPTIONS } from '@/lib/devis-helpers'
-import { X, Loader2, FileText, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
-interface Props {
-  open: boolean
-  onClose: () => void
-  onCreated: () => void
+const STATUT_MAP: Record<string, { label: string; color: string }> = {
+  en_attente_reponse: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
+  chiffre: { label: 'Devis reçu', color: 'bg-blue-100 text-blue-800' },
+  accepte: { label: 'Accepté', color: 'bg-green-100 text-green-800' },
+  refuse: { label: 'Refusé', color: 'bg-red-100 text-red-800' },
+  annule: { label: 'Annulé', color: 'bg-gray-100 text-gray-600' },
+  expire: { label: 'Expiré', color: 'bg-orange-100 text-orange-700' },
 }
 
-export function DemanderDevisModal({ open, onClose, onCreated }: Props) {
-  const [typeService, setTypeService] = useState('')
-  const [titre, setTitre] = useState('')
-  const [description, setDescription] = useState('')
-  const [budget, setBudget] = useState('')
-  const [delai, setDelai] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+export default function ClientDevisPage() {
+  const [devis, setDevis] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!open) return null
+  useEffect(() => {
+    api.get('/devis')
+      .then(res => setDevis(res.data?.data || res.data || []))
+      .catch(() => toast.error('Erreur lors du chargement des devis'))
+      .finally(() => setLoading(false))
+  }, [])
 
-  const reset = () => {
-    setTypeService(''); setTitre(''); setDescription(''); setBudget(''); setDelai('')
-  }
-
-  const handleClose = () => {
-    if (submitting) return
-    reset()
-    onClose()
-  }
-
-  const handleSubmit = async () => {
-    // Validation côté client
-    if (!typeService) return toast.error('Choisissez un type de service')
-    if (titre.trim().length < 5) return toast.error('Le titre doit faire au moins 5 caractères')
-    if (description.trim().length < 20) return toast.error('Décrivez votre besoin (20 caractères minimum)')
-
-    setSubmitting(true)
+  const accepter = async (id: number) => {
     try {
-      await api.post('/devis', {
-        type_service: typeService,
-        titre: titre.trim(),
-        description_besoin: description.trim(),
-        budget_indicatif: budget ? parseFloat(budget) : null,
-        delai_souhaite: delai || null,
-      })
-      toast.success('Demande de devis envoyée ! Notre équipe va la traiter.')
-      reset()
-      onCreated()
-      onClose()
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? "Erreur lors de l'envoi de la demande")
-    } finally {
-      setSubmitting(false)
+      await api.post(`/devis/${id}/accepter`)
+      setDevis(prev => prev.map(d => d.id_demande_devis === id ? { ...d, statut: 'accepte' } : d))
+      toast.success('Devis accepté ! Un panier a été créé.')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur')
+    }
+  }
+
+  const refuser = async (id: number) => {
+    try {
+      await api.post(`/devis/${id}/refuser`)
+      setDevis(prev => prev.map(d => d.id_demande_devis === id ? { ...d, statut: 'refuse' } : d))
+      toast.success('Devis refusé.')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur')
+    }
+  }
+
+  const annuler = async (id: number) => {
+    try {
+      await api.post(`/devis/${id}/annuler`)
+      setDevis(prev => prev.map(d => d.id_demande_devis === id ? { ...d, statut: 'annule' } : d))
+      toast.success('Demande annulée.')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur')
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-      onClick={handleClose}
-    >
-      <div
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
-              <FileText className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Demander un devis personnalisé</h2>
-              <p className="text-xs text-blue-100">Décrivez votre projet, nous le chiffrons sous 48h</p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            disabled={submitting}
-            className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white disabled:opacity-50"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="space-y-5 px-6 py-6">
-          {/* Type de service */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-700">
-              Type de service <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {TYPE_SERVICE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTypeService(opt.value)}
-                  className={cn(
-                    'flex items-center gap-2 rounded-xl border-2 px-3 py-3 text-left text-sm font-medium transition-all duration-200',
-                    typeService === opt.value
-                      ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm scale-[1.02]'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                  )}
-                >
-                  <span className="text-lg">{opt.icon}</span>
-                  <span className="leading-tight">{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Titre */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-700">
-              Titre du projet <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={titre}
-              onChange={(e) => setTitre(e.target.value)}
-              placeholder="Ex : Identité visuelle complète pour ma boutique"
-              maxLength={200}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-700">
-              Description du besoin <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez précisément ce que vous souhaitez : objectifs, style, contraintes, exemples..."
-              rows={5}
-              maxLength={5000}
-              className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-            <p className="mt-1 text-right text-xs text-gray-400">{description.length}/5000</p>
-          </div>
-
-          {/* Budget + Délai */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Budget indicatif (XAF)
-                <span className="ml-1 font-normal text-gray-400">— optionnel</span>
-              </label>
-              <input
-                type="number"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                placeholder="Ex : 150000"
-                min={0}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Délai souhaité
-                <span className="ml-1 font-normal text-gray-400">— optionnel</span>
-              </label>
-              <input
-                type="date"
-                value={delai}
-                onChange={(e) => setDelai(e.target.value)}
-                min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </div>
-          </div>
-
-          {/* Note info */}
-          <div className="flex items-start gap-3 rounded-xl bg-blue-50 px-4 py-3">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-            <p className="text-xs leading-relaxed text-blue-800">
-              Après réception, notre équipe étudie votre demande et vous propose un prix et un délai.
-              Vous restez libre d'accepter ou de refuser — sans engagement.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-b-2xl border-t border-gray-100 bg-white px-6 py-4">
-          <button
-            onClick={handleClose}
-            disabled={submitting}
-            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 disabled:opacity-60"
-          >
-            {submitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Envoi…</>
-            ) : (
-              <>Envoyer ma demande</>
-            )}
-          </button>
-        </div>
+    <DashboardLayout role="client">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Mes Devis</h1>
+        <p className="text-escom-neutral-500 text-sm">Suivez vos demandes de devis et propositions commerciales</p>
       </div>
-    </div>
+
+      {loading ? (
+        <Loader2 className="w-8 h-8 animate-spin text-escom-blue-600 mx-auto" />
+      ) : devis.length === 0 ? (
+        <div className="card-escom p-12 text-center text-escom-neutral-500">
+          <FileText className="w-12 h-12 mx-auto mb-3 text-escom-neutral-300" />
+          <p>Aucun devis pour le moment.</p>
+          <p className="text-xs mt-1">Vos demandes de devis apparaîtront ici.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {devis.map((d: any) => {
+            const statut = STATUT_MAP[d.statut] || STATUT_MAP.en_attente_reponse
+            return (
+              <motion.div
+                key={d.id_demande_devis}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card-escom p-5"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="font-bold text-lg">{d.titre}</p>
+                    <p className="text-xs text-escom-neutral-500">
+                      {d.numero_devis} &bull; {formatDate(d.created_at)}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statut.color}`}>
+                    {statut.label}
+                  </span>
+                </div>
+
+                <p className="text-sm text-escom-neutral-700 line-clamp-2 mb-3">{d.description_besoin}</p>
+
+                <div className="flex flex-wrap gap-3 text-xs text-escom-neutral-500">
+                  {d.type_service && <span className="capitalize">{d.type_service.replace(/_/g, ' ')}</span>}
+                  {d.budget_indicatif && <span>Budget: {formatXAF(d.budget_indicatif)}</span>}
+                  {d.delai_souhaite && (
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} /> {formatDate(d.delai_souhaite)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Proposition chiffrée */}
+                {d.prix_propose_ttc && d.statut !== 'en_attente_reponse' && (
+                  <div className="mt-3 p-3 bg-escom-gold-50 rounded border border-escom-gold-200">
+                    <p className="text-xs text-escom-gold-800 font-semibold uppercase">Proposition ESCOM</p>
+                    {d.commentaire_admin && (
+                      <p className="text-sm mt-1 text-escom-neutral-700">{d.commentaire_admin}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="text-xs text-escom-neutral-500">
+                        <span>HT: {formatXAF(d.prix_propose_ht)}</span>
+                        {d.delai_propose_jours && <span className="ml-3">Délai: {d.delai_propose_jours} jours</span>}
+                      </div>
+                      <p className="text-lg font-bold text-escom-gold-700">{formatXAF(d.prix_propose_ttc)}</p>
+                    </div>
+                    {d.valide_jusqu_au && (
+                      <p className="text-[11px] text-escom-neutral-400 mt-1">
+                        Valable jusqu'au {formatDate(d.valide_jusqu_au)}
+                      </p>
+                    )}
+
+                    {d.statut === 'chiffre' && (
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => accepter(d.id_demande_devis)}
+                          className="btn-primary text-sm flex-1 flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 size={14} /> Accepter
+                        </button>
+                        <button
+                          onClick={() => refuser(d.id_demande_devis)}
+                          className="btn-outline text-sm flex-1 flex items-center justify-center gap-1 !text-red-600 !border-red-200"
+                        >
+                          <XCircle size={14} /> Refuser
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Annuler si en attente */}
+                {(d.statut === 'en_attente_reponse') && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() => annuler(d.id_demande_devis)}
+                      className="btn-outline text-xs flex items-center gap-1 !text-gray-500"
+                    >
+                      <Ban size={12} /> Annuler la demande
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
+    </DashboardLayout>
   )
 }

@@ -17,7 +17,7 @@ class ServiceImpression extends Model
     protected $fillable = [
         'id_categorie', 'type_support', 'libelle', 'description', 'image',
         'format', 'grammage_g_m2', 'finition', 'recto_verso',
-        'quantite_min', 'prix_unitaire_ht', 'frais_calage_ht', 'actif',
+        'quantite_min', 'prix_unitaire_ht', 'frais_calage_ht', 'duree_livraison_jours', 'actif',
         'id_employe_responsable',
     ];
 

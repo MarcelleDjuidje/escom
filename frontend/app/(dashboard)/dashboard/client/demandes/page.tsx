@@ -75,7 +75,7 @@ export default function ClientDemandes() {
               <label className="text-sm font-semibold mb-1 block">Type de campagne *</label>
               <select required value={form.id_campagne} onChange={e => setForm({ ...form, id_campagne: e.target.value })} className="input-escom">
                 <option value="">Choisir...</option>
-                {campagnes.map(c => <option key={c.id_campagne} value={c.id_campagne}>{c.libelle}</option>)}
+                {campagnes.map(c => <option key={c.id_campagne} value={c.id_campagne}>{c.titre}</option>)}
               </select>
             </div>
             <div>
