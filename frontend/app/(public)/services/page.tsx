@@ -42,7 +42,7 @@ export default function ServicesPage() {
     // Les campagnes passent obligatoirement par une demande de devis
     const isCampagne = active.id === 'campagnes'
     const target = isCampagne
-      ? '/dashboard/client/demandes'
+      ? `/dashboard/client/demandes?campagne=${service[active.idKey]}&open=1`
       : `/dashboard/client/commandes/nouveau?type=${active.id}&service=${service[active.idKey]}`
 
     if (!user) {

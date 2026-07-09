@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
@@ -8,10 +8,14 @@ import { StatusBadge } from '@/components/dashboard/status-badge'
 import { api } from '@/lib/api'
 import { formatDate, formatXAF } from '@/lib/utils'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function ClientDemandes() {
+function ClientDemandesContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const campagneParam = searchParams.get('campagne')
+  const openParam = searchParams.get('open')
+
   const [demandes, setDemandes] = useState<any[]>([])
   const [campagnes, setCampagnes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,8 +33,13 @@ export default function ClientDemandes() {
     ]).then(([d, c]) => {
       setDemandes(d.data?.data || d.data || [])
       setCampagnes(c.data || [])
+      // Auto-open form with campaign pre-selected from URL params
+      if (openParam && campagneParam) {
+        setShowForm(true)
+        setForm(prev => ({ ...prev, id_campagne: campagneParam }))
+      }
     }).finally(() => setLoading(false))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const changerStatut = async (id: number, statut: string) => {
     try {
@@ -162,5 +171,13 @@ export default function ClientDemandes() {
         </div>
       )}
     </DashboardLayout>
+  )
+}
+
+export default function ClientDemandes() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center"><Loader2 className="animate-spin mx-auto" /></div>}>
+      <ClientDemandesContent />
+    </Suspense>
   )
 }
