@@ -71,20 +71,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('chat/conversations/{id}/read', [ChatController::class, 'markAsRead']);
     Route::post('chat/messages/{id}/reaction', [ChatController::class, 'reaction']);
 
-    // Devis
-    Route::get('devis', [DevisController::class, 'index']);
-    Route::get('devis/{id}', [DevisController::class, 'show']);
-    Route::get('devis/{id}/pdf', [DevisController::class, 'generatePdf']);
-    Route::post('devis', [DevisController::class, 'store']);
-    Route::patch('devis/{id}/statut', [DevisController::class, 'updateStatut']);
-    Route::delete('devis/{id}', [DevisController::class, 'destroy']);
-
-    // ============ DEVIS PERSONNALISÉS ============
-    // ⚠️ La route /stats DOIT être avant /{id} (sinon "stats" est pris pour un id)
+    // Devis personnalisés
     Route::get('devis/stats',            [DevisController::class, 'stats']);
     Route::get('devis',                  [DevisController::class, 'index']);
     Route::post('devis',                 [DevisController::class, 'store']);
     Route::get('devis/{id}',             [DevisController::class, 'show']);
+    Route::get('devis/{id}/pdf',         [DevisController::class, 'generatePdf']);
     Route::post('devis/{id}/chiffrer',   [DevisController::class, 'chiffrer']);
     Route::post('devis/{id}/accepter',   [DevisController::class, 'accepter']);
     Route::post('devis/{id}/refuser',    [DevisController::class, 'refuser']);

@@ -46,6 +46,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: '/dashboard/admin/services', label: 'Services', icon: Package },
   { href: '/dashboard/admin/commandes', label: 'Commandes', icon: ShoppingCart },
   { href: '/dashboard/admin/devis', label: 'Devis', icon: FileText },
+  { href: '/dashboard/admin/demandes-campagne', label: 'Demandes campagne', icon: Megaphone },
   { href: '/dashboard/admin/factures', label: 'Factures', icon: Receipt },
   { href: '/dashboard/admin/projets', label: 'Projets', icon: Briefcase },
   { href: '/dashboard/admin/clients', label: 'Clients', icon: Users },
