@@ -27,18 +27,31 @@ function ClientDemandesContent() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/demandes-campagne'),
-      api.get('/public/services/campagnes'),
-    ]).then(([d, c]) => {
-      setDemandes(d.data?.data || d.data || [])
-      setCampagnes(c.data || [])
+    const loadData = async () => {
+      // Charger campagnes et demandes indépendamment (un échec ne bloque pas l'autre)
+      const [demandesRes, campagnesRes] = await Promise.allSettled([
+        api.get('/demandes-campagne'),
+        api.get('/public/services/campagnes'),
+      ])
+
+      if (demandesRes.status === 'fulfilled') {
+        const d = demandesRes.value.data
+        setDemandes(d?.data || d || [])
+      }
+
+      if (campagnesRes.status === 'fulfilled') {
+        setCampagnes(campagnesRes.value.data || [])
+      }
+
       // Auto-open form with campaign pre-selected from URL params
       if (openParam && campagneParam) {
         setShowForm(true)
         setForm(prev => ({ ...prev, id_campagne: campagneParam }))
       }
-    }).finally(() => setLoading(false))
+
+      setLoading(false)
+    }
+    loadData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const changerStatut = async (id: number, statut: string) => {
